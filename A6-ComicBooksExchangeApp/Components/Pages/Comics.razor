@@ -1,0 +1,206 @@
+@page "/comics"
+@using MudBlazor
+@using System.Net.Http.Json
+
+<PageTitle>Browse Comics</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h6" GutterBottom="true">Filters</MudText>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Search by Title</MudText>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Comic title" FullWidth Variant="Variant.Outlined" Size="Size.Small"
+                    OnKeyUp="OnSearchChanged"></MudTextField>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Era</MudText>
+                <MudSelect @bind-Value="selectedEra" Placeholder="All Eras" FullWidth Variant="Variant.Outlined" Size="Size.Small">
+                    <MudSelectItem Value="@("")">All Eras</MudSelectItem>
+                    <MudSelectItem Value="@("Golden Age")">Golden Age</MudSelectItem>
+                    <MudSelectItem Value="@("Silver Age")">Silver Age</MudSelectItem>
+                    <MudSelectItem Value="@("Bronze Age")">Bronze Age</MudSelectItem>
+                    <MudSelectItem Value="@("Modern Age")">Modern Age</MudSelectItem>
+                    <MudSelectItem Value="@("Contemporary")">Contemporary</MudSelectItem>
+                </MudSelect>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Condition</MudText>
+                <MudSelect @bind-Value="selectedCondition" Placeholder="All Conditions" FullWidth Variant="Variant.Outlined" Size="Size.Small">
+                    <MudSelectItem Value="@("")">All Conditions</MudSelectItem>
+                    <MudSelectItem Value="@("Mint")">Mint</MudSelectItem>
+                    <MudSelectItem Value="@("Near Mint")">Near Mint</MudSelectItem>
+                    <MudSelectItem Value="@("Very Fine")">Very Fine</MudSelectItem>
+                    <MudSelectItem Value="@("Fine")">Fine</MudSelectItem>
+                    <MudSelectItem Value="@("Very Good")">Very Good</MudSelectItem>
+                    <MudSelectItem Value="@("Good")">Good</MudSelectItem>
+                </MudSelect>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Publisher</MudText>
+                <MudTextField @bind-Value="selectedPublisher" Placeholder="e.g., Marvel, DC" FullWidth Variant="Variant.Outlined" Size="Size.Small"></MudTextField>
+
+                <MudCheckBox T="bool" @bind-Checked="keyIssuesOnly" Label="Key Issues Only" Class="mt-4"></MudCheckBox>
+                <MudCheckBox T="bool" @bind-Checked="gradedOnly" Label="Professionally Graded" Class="mt-2"></MudCheckBox>
+
+                <div Class="mt-4 mb-2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth OnClick="ApplyFilters">Apply Filters</MudButton>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth OnClick="ResetFilters" Class="mt-2">Reset</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="9">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h5" GutterBottom="true">Available Comics</MudText>
+
+                @if (isLoading)
+                {
+                    <MudProgressLinear Indeterminate="true"></MudProgressLinear>
+                    <MudText Align="Align.Center" Class="mt-4">Loading comics...</MudText>
+                }
+                else if (comics == null || comics.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Start">
+                        No comics found matching your filters. Try adjusting your search criteria.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudGrid>
+                        @foreach (var comic in comics)
+                        {
+                            <MudItem xs="12" sm="6" md="4" lg="3">
+                                <MudCard>
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudText Typo="Typo.h6">@comic.Title</MudText>
+                                            <MudText Typo="Typo.body2">#@comic.IssueNumber</MudText>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@comic.Era</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text" Class="ml-2">@comic.Publisher</MudChip>
+                                        
+                                        <MudText Typo="Typo.body2" Class="mt-3"><strong>Condition:</strong> @comic.ConditionGrade</MudText>
+                                        <MudText Typo="Typo.body2"><strong>Est. Value:</strong> $@comic.EstimatedValue.ToString("F2")</MudText>
+                                        
+                                        @if (comic.IsProfessionallyGraded)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.CheckCircle" Class="mt-2">
+                                                Professionally Graded
+                                            </MudChip>
+                                        }
+                                        
+                                        @if (comic.IsKeyIssue)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" Icon="@Icons.Material.Filled.Star" Class="mt-2">
+                                                Key Issue
+                                            </MudChip>
+                                        }
+                                    </MudCardContent>
+                                    <MudCardActions>
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">View Details</MudButton>
+                                        <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small">Make Offer</MudButton>
+                                    </MudCardActions>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+
+                    <MudPagination Count="(int)Math.Ceiling(totalComics / (decimal)pageSize)" 
+                                    Selected="currentPage" 
+                                    SelectedChanged="OnPageChanged"
+                                    Class="mt-6 justify-center"></MudPagination>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<ComicDto>? comics;
+    private bool isLoading = true;
+    private string searchTerm = string.Empty;
+    private string selectedEra = string.Empty;
+    private string selectedCondition = string.Empty;
+    private string selectedPublisher = string.Empty;
+    private bool keyIssuesOnly = false;
+    private bool gradedOnly = false;
+    private int currentPage = 1;
+    private int pageSize = 12;
+    private int totalComics = 0;
+
+    private class ComicDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; }
+        public string Publisher { get; set; } = string.Empty;
+        public string Characters { get; set; } = string.Empty;
+        public decimal EstimatedValue { get; set; }
+        public string ConditionGrade { get; set; } = string.Empty;
+        public string Era { get; set; } = string.Empty;
+        public bool IsKeyIssue { get; set; }
+        public bool IsProfessionallyGraded { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComics();
+    }
+
+    private async Task LoadComics()
+    {
+        isLoading = true;
+        try
+        {
+            // TODO: Implement API call to fetch comics
+            // For now, using sample data
+            comics = new List<ComicDto>
+            {
+                new ComicDto { Id = 1, Title = "Amazing Spider-Man", IssueNumber = 1, Publisher = "Marvel", Era = "Bronze Age", ConditionGrade = "Very Fine", EstimatedValue = 2500, IsKeyIssue = true, IsProfessionallyGraded = true },
+                new ComicDto { Id = 2, Title = "X-Men", IssueNumber = 1, Publisher = "Marvel", Era = "Silver Age", ConditionGrade = "Fine", EstimatedValue = 5000, IsKeyIssue = true, IsProfessionallyGraded = true }
+            };
+            totalComics = comics.Count;
+        }
+        catch
+        {
+            // TODO: Handle error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnSearchChanged(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        currentPage = 1;
+        await LoadComics();
+    }
+
+    private async Task ResetFilters()
+    {
+        searchTerm = string.Empty;
+        selectedEra = string.Empty;
+        selectedCondition = string.Empty;
+        selectedPublisher = string.Empty;
+        keyIssuesOnly = false;
+        gradedOnly = false;
+        currentPage = 1;
+        await LoadComics();
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        currentPage = page;
+        await LoadComics();
+    }
+}

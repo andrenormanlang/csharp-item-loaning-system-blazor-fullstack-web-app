@@ -1,0 +1,155 @@
+@rendermode InteractiveWebAssembly
+@using MudBlazor
+
+<div class="search-filter-component">
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" GutterBottom="true">Advanced Search</MudText>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="SearchTerm" 
+                    Placeholder="Search by title, character, or publisher"
+                    Immediate="true"
+                    OnKeyUp="OnSearchTermChanged"
+                    FullWidth 
+                    Variant="Variant.Outlined"
+                    StartAdornment="@((MarkupString)"<i class=\"fa fa-search\"></i>")">
+                </MudTextField>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth OnClick="OnSearch">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="mr-2"></MudIcon>
+                    Search
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        <MudExpansionPanels Class="mt-4">
+            <MudExpansionPanel Text="More Filters" Dense="true">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete T="string" 
+                            @bind-Value="SelectedEra"
+                            SearchFunc="@SearchEra"
+                            Label="Era"
+                            Variant="Variant.Outlined"
+                            Size="Size.Small"
+                            FullWidth>
+                        </MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete T="string"
+                            @bind-Value="SelectedCondition"
+                            SearchFunc="@SearchCondition"
+                            Label="Condition"
+                            Variant="Variant.Outlined"
+                            Size="Size.Small"
+                            FullWidth>
+                        </MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="SelectedPublisher"
+                            Label="Publisher"
+                            Placeholder="e.g., Marvel, DC, Vertigo"
+                            Variant="Variant.Outlined"
+                            Size="Size.Small"
+                            FullWidth>
+                        </MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="SelectedCharacter"
+                            Label="Character"
+                            Placeholder="e.g., Spider-Man, X-Men"
+                            Variant="Variant.Outlined"
+                            Size="Size.Small"
+                            FullWidth>
+                        </MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCheckBox T="bool" @bind-Checked="KeyIssuesOnly" Label="Key Issues Only"></MudCheckBox>
+                        <MudCheckBox T="bool" @bind-Checked="ProfessionallyGradedOnly" Label="Professionally Graded Only"></MudCheckBox>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnApplyFilters" Class="mr-2">Apply Filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="OnClearFilters">Clear Filters</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudPaper>
+</div>
+
+@code {
+    [Parameter]
+    public string SearchTerm { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SelectedEra { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SelectedCondition { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SelectedPublisher { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SelectedCharacter { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool KeyIssuesOnly { get; set; }
+
+    [Parameter]
+    public bool ProfessionallyGradedOnly { get; set; }
+
+    [Parameter]
+    public EventCallback OnSearched { get; set; }
+
+    private readonly List<string> eras = new() { "Golden Age", "Silver Age", "Bronze Age", "Modern Age", "Contemporary" };
+    private readonly List<string> conditions = new() { "Mint", "Near Mint", "Very Fine", "Fine", "Very Good", "Good", "Fair", "Poor" };
+
+    private async Task OnSearchTermChanged(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await OnSearch();
+        }
+    }
+
+    private async Task OnSearch()
+    {
+        await OnSearched.InvokeAsync();
+    }
+
+    private async Task OnApplyFilters()
+    {
+        await OnSearched.InvokeAsync();
+    }
+
+    private async Task OnClearFilters()
+    {
+        SearchTerm = string.Empty;
+        SelectedEra = string.Empty;
+        SelectedCondition = string.Empty;
+        SelectedPublisher = string.Empty;
+        SelectedCharacter = string.Empty;
+        KeyIssuesOnly = false;
+        ProfessionallyGradedOnly = false;
+        await OnSearched.InvokeAsync();
+    }
+
+    private async Task<IEnumerable<string>> SearchEra(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return eras;
+
+        return await Task.FromResult(eras.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<string>> SearchCondition(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return conditions;
+
+        return await Task.FromResult(conditions.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase)));
+    }
+}

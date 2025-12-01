@@ -1,0 +1,6 @@
+@ComicBooksExchangeAppAPI_HostAddress = http://localhost:5116
+
+GET {{ComicBooksExchangeAppAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

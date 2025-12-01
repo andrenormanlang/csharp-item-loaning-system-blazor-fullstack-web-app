@@ -1,0 +1,143 @@
+@rendermode InteractiveWebAssembly
+@using MudBlazor
+
+<MudPaper Elevation="2" Class="pa-6" Style="max-width: 600px; margin: 0 auto;">
+    <MudText Typo="Typo.h5" GutterBottom="true">Propose Exchange</MudText>
+    
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        You're offering <strong>@OfferedComic</strong> for <strong>@RequestedComic</strong>
+    </MudAlert>
+
+    <MudForm @ref="form" @bind-IsValid="isFormValid">
+        <MudTextField @bind-Value="model.Message"
+            T="string"
+            Label="Your Message"
+            Placeholder="Include any trade notes or terms..."
+            Variant="Variant.Outlined"
+            FullWidth
+            MultiLine="true"
+            Lines="4"
+            MaxLength="500"
+            Counter="500">
+        </MudTextField>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">
+            <strong>Your Comic Value: $@OfferedValue.ToString("F2")</strong>
+        </MudText>
+        <MudText Typo="Typo.subtitle2" Class="mb-2">
+            <strong>Requested Comic Value: $@RequestedValue.ToString("F2")</strong>
+        </MudText>
+
+        <div style="display: flex; align-items: center; margin: 12px 0;">
+            <MudIcon Icon="@Icons.Material.Filled.CompareArrows"></MudIcon>
+            <span style="margin: 0 8px;">Value Difference:</span>
+            <MudText Typo="Typo.h6">
+                $@Math.Abs(OfferedValue - RequestedValue).ToString("F2")
+            </MudText>
+            @if (OfferedValue < RequestedValue)
+            {
+                <MudText Typo="Typo.body2" Class="ml-4">You're offering less</MudText>
+            }
+            else if (OfferedValue > RequestedValue)
+            {
+                <MudText Typo="Typo.body2" Class="ml-4">You're offering more</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="ml-4">Equal value</MudText>
+            }
+        </div>
+
+        <MudCheckBox T="bool" @bind-Checked="model.WillingToAddValue" 
+            Label="I'm willing to add cash to balance the value" Class="mt-4">
+        </MudCheckBox>
+
+        @if (model.WillingToAddValue)
+        {
+            <MudTextField @bind-Value="model.AdditionalValue"
+                T="decimal?"
+                Label="Additional Amount ($)"
+                Variant="Variant.Outlined"
+                InputType="InputType.Number"
+                Step="0.01m"
+                FullWidth
+                Class="mt-2">
+            </MudTextField>
+        }
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4">Shipping & Handling</MudText>
+        <MudSelect @bind-Value="model.ShippingMethod" Label="Preferred Shipping" FullWidth Variant="Variant.Outlined">
+            <MudSelectItem Value="@("USPS")">USPS</MudSelectItem>
+            <MudSelectItem Value="@("UPS")">UPS</MudSelectItem>
+            <MudSelectItem Value="@("FedEx")">FedEx</MudSelectItem>
+            <MudSelectItem Value="@("Local")">Local Pickup</MudSelectItem>
+        </MudSelect>
+
+        <MudCheckBox T="bool" @bind-Checked="model.WithInsurance" Label="Insured Shipping" Class="mt-3"></MudCheckBox>
+    </MudForm>
+
+    <div Class="mt-6" style="display: flex; gap: 8px;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="!isFormValid">
+            Send Offer
+        </MudButton>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string OfferedComic { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RequestedComic { get; set; } = string.Empty;
+
+    [Parameter]
+    public decimal OfferedValue { get; set; }
+
+    [Parameter]
+    public decimal RequestedValue { get; set; }
+
+    [Parameter]
+    public EventCallback<ExchangeOffer> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private MudForm form = default!;
+    private bool isFormValid;
+    private ExchangeOfferModel model = new();
+
+    public class ExchangeOfferModel
+    {
+        public string Message { get; set; } = string.Empty;
+        public bool WillingToAddValue { get; set; }
+        public decimal? AdditionalValue { get; set; }
+        public string ShippingMethod { get; set; } = "USPS";
+        public bool WithInsurance { get; set; } = true;
+    }
+
+    public class ExchangeOffer
+    {
+        public string Message { get; set; } = string.Empty;
+        public decimal? AdditionalValue { get; set; }
+        public string ShippingMethod { get; set; } = string.Empty;
+        public bool WithInsurance { get; set; }
+    }
+
+    private async Task Submit()
+    {
+        if (!isFormValid) return;
+
+        var offer = new ExchangeOffer
+        {
+            Message = model.Message,
+            AdditionalValue = model.WillingToAddValue ? model.AdditionalValue : null,
+            ShippingMethod = model.ShippingMethod,
+            WithInsurance = model.WithInsurance
+        };
+
+        await OnSubmit.InvokeAsync(offer);
+    }
+
+    private async Task Cancel() => await OnCancel.InvokeAsync();
+}

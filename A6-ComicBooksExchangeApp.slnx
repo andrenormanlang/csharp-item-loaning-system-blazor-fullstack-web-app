@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="A6-ComicBooksExchangeApp.Client/A6-ComicBooksExchangeApp.Client.csproj" />
+  <Project Path="A6-ComicBooksExchangeApp/A6-ComicBooksExchangeApp.csproj" />
+  <Project Path="ComicBooksExchangeAppAPI/ComicBooksExchangeAppAPI.csproj" />
+</Solution>

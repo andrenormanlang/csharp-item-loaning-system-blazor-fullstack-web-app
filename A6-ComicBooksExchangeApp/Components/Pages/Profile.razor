@@ -1,0 +1,275 @@
+@page "/profile/{userId:int}"
+@using MudBlazor
+
+<PageTitle>Collector Profile</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="2" Class="pa-6">
+                <div Class="text-center">
+                    <MudAvatar Size="Size.Large" Style="height: 120px; width: 120px; font-size: 2rem;">
+                        @((userProfile?.FullName ?? "User").First())
+                    </MudAvatar>
+                    <MudText Typo="Typo.h5" Class="mt-4">@userProfile?.FullName</MudText>
+                    <MudText Typo="Typo.body2">@userProfile?.Username</MudText>
+                </div>
+
+                @if (userProfile?.IsVerified == true)
+                {
+                    <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mt-3 justify-center">
+                        Verified Collector
+                    </MudChip>
+                }
+
+                <MudDivider Class="my-4"></MudDivider>
+
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5; text-align: center;">
+                            <MudText Typo="Typo.h6">@userProfile?.SuccessfulExchanges</MudText>
+                            <MudText Typo="Typo.caption">Exchanges</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5; text-align: center;">
+                            <MudText Typo="Typo.h6">@userProfile?.AverageRating.ToString("F1")</MudText>
+                            <MudText Typo="Typo.caption">Rating</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5; text-align: center;">
+                            <MudText Typo="Typo.h6">@comicsCount</MudText>
+                            <MudText Typo="Typo.caption">Comics</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5; text-align: center;">
+                            <MudText Typo="Typo.h6">@userProfile?.MemberSince.Year</MudText>
+                            <MudText Typo="Typo.caption">Member Since</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4"></MudDivider>
+
+                <MudText Typo="Typo.subtitle2" GutterBottom="true"><strong>Collecting Focus</strong></MudText>
+                <MudText Typo="Typo.body2">@userProfile?.CollectingFocus</MudText>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-3" GutterBottom="true"><strong>Preferred Eras</strong></MudText>
+                <MudText Typo="Typo.body2">@userProfile?.PreferredEras</MudText>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-3" GutterBottom="true"><strong>Favorite Characters</strong></MudText>
+                <MudText Typo="Typo.body2">@userProfile?.FavoriteCharacters</MudText>
+
+                @if (!string.IsNullOrEmpty(userProfile?.Location))
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-3" GutterBottom="true"><strong>Location</strong></MudText>
+                    <MudText Typo="Typo.body2">@userProfile.Location</MudText>
+                }
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth Class="mt-4">Connect with Collector</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudTabs>
+                <MudTabPanel Text="About" Icon="@Icons.Material.Filled.Info">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        @if (!string.IsNullOrEmpty(userProfile?.Biography))
+                        {
+                            <MudText Typo="Typo.body2">@userProfile.Biography</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">No biography provided.</MudText>
+                        }
+
+                        @if (!string.IsNullOrEmpty(userProfile?.TradePreferences))
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mt-4"><strong>Trade Preferences</strong></MudText>
+                            <MudText Typo="Typo.body2">@userProfile.TradePreferences</MudText>
+                        }
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Collection" Icon="@Icons.Material.Filled.Collections">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        @if (collectionComics == null || collectionComics.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2">No comics in collection yet.</MudText>
+                        }
+                        else
+                        {
+                            <MudSimpleTable Style="overflow-x: auto;">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Issue</th>
+                                        <th>Era</th>
+                                        <th>Condition</th>
+                                        <th>Value</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var comic in collectionComics)
+                                    {
+                                        <tr>
+                                            <td>@comic.Title</td>
+                                            <td>#@comic.IssueNumber</td>
+                                            <td>@comic.Era</td>
+                                            <td>@comic.ConditionGrade</td>
+                                            <td>$@comic.EstimatedValue.ToString("F2")</td>
+                                            <td>
+                                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">Make Offer</MudButton>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Reviews" Icon="@Icons.Material.Filled.Reviews">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        @if (reviews == null || reviews.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2">No reviews yet.</MudText>
+                        }
+                        else
+                        {
+                            @foreach (var review in reviews)
+                            {
+                                <MudPaper Elevation="0" Class="pa-3 mb-3" Style="background-color: #f5f5f5;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <MudText Typo="Typo.body1"><strong>@review.ReviewerName</strong></MudText>
+                                        <MudRating @bind-SelectedValue="review.Rating" ReadOnly="true" IconSize="Size.Small"></MudRating>
+                                    </div>
+                                    <MudText Typo="Typo.caption">@review.DateSubmitted.ToString("MMM dd, yyyy")</MudText>
+                                    <MudText Typo="Typo.body2" Class="mt-2">@review.Comment</MudText>
+                                </MudPaper>
+                            }
+                        }
+                    </MudPaper>
+                </MudTabPanel>
+            </MudTabs>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int UserId { get; set; }
+
+    private UserProfile? userProfile;
+    private List<ComicItem>? collectionComics;
+    private List<ReviewItem>? reviews;
+    private int comicsCount = 0;
+
+    private class UserProfile
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string CollectingFocus { get; set; } = string.Empty;
+        public string PreferredEras { get; set; } = string.Empty;
+        public string FavoriteCharacters { get; set; } = string.Empty;
+        public string? Biography { get; set; }
+        public int SuccessfulExchanges { get; set; }
+        public decimal AverageRating { get; set; }
+        public DateTime MemberSince { get; set; }
+        public bool IsVerified { get; set; }
+        public string? Location { get; set; }
+        public string? TradePreferences { get; set; }
+    }
+
+    private class ComicItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; }
+        public string Era { get; set; } = string.Empty;
+        public string ConditionGrade { get; set; } = string.Empty;
+        public decimal EstimatedValue { get; set; }
+    }
+
+    private class ReviewItem
+    {
+        public int Rating { get; set; }
+        public string ReviewerName { get; set; } = string.Empty;
+        public string? Comment { get; set; }
+        public DateTime DateSubmitted { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+        await LoadUserCollection();
+        await LoadUserReviews();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        try
+        {
+            // TODO: Implement API call to fetch user profile
+            userProfile = new UserProfile
+            {
+                Id = UserId,
+                Username = "collector45",
+                FullName = "John Smith",
+                CollectingFocus = "Bronze Age Marvel",
+                PreferredEras = "Bronze Age, Silver Age",
+                FavoriteCharacters = "Spider-Man, X-Men",
+                Biography = "Lifelong comic collector since 1978. Specializing in Bronze Age Marvel comics.",
+                SuccessfulExchanges = 23,
+                AverageRating = 4.8m,
+                MemberSince = new DateTime(2020, 3, 15),
+                IsVerified = true,
+                Location = "New York, NY",
+                TradePreferences = "Prefer mail exchange with insurance. Open to local pickup meetings."
+            };
+        }
+        catch (Exception)
+        {
+            // TODO: Handle error
+        }
+    }
+
+    private async Task LoadUserCollection()
+    {
+        try
+        {
+            // TODO: Implement API call to fetch user's comics
+            collectionComics = new List<ComicItem>
+            {
+                new ComicItem { Id = 1, Title = "Amazing Spider-Man", IssueNumber = 1, Era = "Bronze Age", ConditionGrade = "Very Fine", EstimatedValue = 2500 },
+                new ComicItem { Id = 2, Title = "X-Men", IssueNumber = 101, Era = "Bronze Age", ConditionGrade = "Fine", EstimatedValue = 1800 }
+            };
+            comicsCount = collectionComics.Count;
+        }
+        catch (Exception)
+        {
+            // TODO: Handle error
+        }
+    }
+
+    private async Task LoadUserReviews()
+    {
+        try
+        {
+            // TODO: Implement API call to fetch user reviews
+            reviews = new List<ReviewItem>
+            {
+                new ReviewItem { Rating = 5, ReviewerName = "JaneD", Comment = "Excellent condition comic, well packaged and fast shipping!", DateSubmitted = DateTime.Now.AddDays(-10) },
+                new ReviewItem { Rating = 5, ReviewerName = "CollectorX", Comment = "Perfect trade experience. Highly recommended!", DateSubmitted = DateTime.Now.AddDays(-20) }
+            };
+        }
+        catch (Exception)
+        {
+            // TODO: Handle error
+        }
+    }
+}

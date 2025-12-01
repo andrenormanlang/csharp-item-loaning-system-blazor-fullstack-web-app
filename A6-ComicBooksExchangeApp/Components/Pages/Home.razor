@@ -1,0 +1,141 @@
+﻿@page "/"
+@using MudBlazor
+
+<PageTitle>Comic Books Exchange</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <MudContainer>
+                    <MudText Typo="Typo.h3" GutterBottom="true" Class="font-weight-bold">
+                        🎨 Comic Books Exchange Marketplace
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1">
+                        Connect with fellow collectors. Trade, discover, and complete your collection.
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mt-4">
+                        Specializing in Bronze Age, Silver Age, and Modern comic books for the experienced collector.
+                    </MudText>
+                </MudContainer>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mb-2" Style="font-size: 2rem; color: #667eea;"></MudIcon>
+                    <MudText Typo="Typo.h6">Browse Comics</MudText>
+                    <MudText Typo="Typo.body2">
+                        Discover thousands of collectible comics
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary">Learn More</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Groups" Class="mb-2" Style="font-size: 2rem; color: #764ba2;"></MudIcon>
+                    <MudText Typo="Typo.h6">Connect Collectors</MudText>
+                    <MudText Typo="Typo.body2">
+                        Meet experienced enthusiasts in your area
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary">Learn More</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Class="mb-2" Style="font-size: 2rem; color: #f093fb;"></MudIcon>
+                    <MudText Typo="Typo.h6">Fair Exchanges</MudText>
+                    <MudText Typo="Typo.body2">
+                        Trade your comics with confidence
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary">Learn More</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Star" Class="mb-2" Style="font-size: 2rem; color: #ffd89b;"></MudIcon>
+                    <MudText Typo="Typo.h6">Trusted Community</MudText>
+                    <MudText Typo="Typo.body2">
+                        Ratings and reviews from real collectors
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary">Learn More</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Class="mt-8">
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Featured Collections</MudText>
+                <MudText Typo="Typo.body2" GutterBottom="true">
+                    Explore curated collections from top collectors
+                </MudText>
+                <MudGrid Class="mt-4">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudChip T="string" Color="Color.Primary" Icon="@Icons.Material.Filled.LocalFireDepartment">Bronze Age Marvel</MudChip>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudChip T="string" Color="Color.Secondary" Icon="@Icons.Material.Filled.LocalFireDepartment">Silver Age DC</MudChip>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.LocalFireDepartment">Key Issues</MudChip>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Class="mt-8">
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">How It Works</MudText>
+                <MudStepper>
+                    <MudStep Title="Create Profile" Description="Register and tell us about your collecting interests">
+                        <MudText Typo="Typo.body2">
+                            Set up your profile with your collecting focus, preferred eras, and favorite characters. This helps us match you with other collectors.
+                        </MudText>
+                    </MudStep>
+                    <MudStep Title="List Comics" Description="Add comics to your collection for trading">
+                        <MudText Typo="Typo.body2">
+                            Add comics from your collection with detailed information including condition grades, era, and estimated value.
+                        </MudText>
+                    </MudStep>
+                    <MudStep Title="Browse & Connect" Description="Find comics you're looking for and connect with collectors">
+                        <MudText Typo="Typo.body2">
+                            Search and filter comics by era, character, publisher, and condition. Send exchange offers to other collectors.
+                        </MudText>
+                    </MudStep>
+                    <MudStep Title="Exchange" Description="Complete the trade safely and securely">
+                        <MudText Typo="Typo.body2">
+                            Coordinate with the other collector, ship your comics securely, and confirm receipt.
+                        </MudText>
+                    </MudStep>
+                    <MudStep Title="Review & Rate" Description="Share your experience with the community">
+                        <MudText Typo="Typo.body2">
+                            Leave ratings and reviews to help build trust in the community and provide feedback on the exchange.
+                        </MudText>
+                    </MudStep>
+                </MudStepper>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
