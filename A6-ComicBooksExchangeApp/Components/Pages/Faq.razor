@@ -1,0 +1,111 @@
+@page "/faq"
+@using MudBlazor
+
+<PageTitle>FAQ - Comic Books Exchange</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <MudText Typo="Typo.h3" GutterBottom="true" Class="font-weight-bold">
+                    Frequently Asked Questions
+                </MudText>
+                <MudText Typo="Typo.subtitle1">
+                    Find answers to common questions about Comic Books Exchange
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudExpansionPanels>
+                <MudExpansionPanel Text="How do I create an account?" Icon="@Icons.Material.Filled.Help">
+                    <p>Click the 'Sign Up' button in the top navigation and fill out the registration form with your email and password. Then set up your collector profile with your interests and preferences.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Is there a fee to use the platform?" Icon="@Icons.Material.Filled.Help">
+                    <p>Comic Books Exchange is completely free to use. We don't charge listing fees, trading fees, or subscription costs. We believe trading should be accessible to all collectors.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I add comics to my collection?" Icon="@Icons.Material.Filled.Help">
+                    <p>Go to 'My Collection' and click 'Add Comic'. Fill in the details about your comic including title, condition, era, and estimated value. You can add as many comics as you want.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What should I charge for shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Shipping costs can be agreed upon between collectors. We recommend using USPS, UPS, or FedEx with tracking and insurance. Costs vary based on weight and distance.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How are comics valued?" Icon="@Icons.Material.Filled.Help">
+                    <p>Comic values are based on current market prices from sources like CGC Price Guide, Comixology, and recent eBay sales. Professional grading significantly affects value. We recommend researching recent comparable sales.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What does 'professionally graded' mean?" Icon="@Icons.Material.Filled.Help">
+                    <p>Professional grading means a third-party company like CGC or CBCS has evaluated the comic's condition on a standardized scale (1-10). This adds credibility and typically increases value.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I know if a collector is trustworthy?" Icon="@Icons.Material.Filled.Help">
+                    <p>Check their profile rating (1-5 stars), read reviews from previous trades, and look at their member history. Verified members have gone through additional verification. Start with lower-value trades if unsure.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if I'm not satisfied with my trade?" Icon="@Icons.Material.Filled.Help">
+                    <p>If there's an issue with the trade, message the collector first to resolve it. If problems persist, contact our support team. Repeated disputes can result in account suspension.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How should I package comics for shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Use acid-free materials like comic bags and boards. Wrap securely in bubble wrap. Use a sturdy box with padding. Include tracking and insurance. Mark as 'Fragile' and 'Do Not Bend'.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I trade locally instead of shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Yes! You can arrange local meetups if you're in the same area. Many collectors prefer meeting in person. Always meet in safe, public locations.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if a package gets lost?" Icon="@Icons.Material.Filled.Help">
+                    <p>This is why we recommend tracked shipping with insurance. If a package is lost, file a claim with the shipping company. Insurance should cover the value of the comics.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I report a problem user?" Icon="@Icons.Material.Filled.Help">
+                    <p>Use the 'Report' button on their profile or contact our support team directly. Include details and evidence of problematic behavior. We take community safety seriously.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I edit or delete my listings?" Icon="@Icons.Material.Filled.Help">
+                    <p>Yes, you can edit comic details anytime. You can remove a comic from your collection, but it will no longer be available for trades. Previous trade records are maintained.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How often should I update my collection?" Icon="@Icons.Material.Filled.Help">
+                    <p>Update your collection regularly, especially when you successfully trade or acquire new comics. Keeping your profile current helps other collectors understand what you have and what you're looking for.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Is my personal information private?" Icon="@Icons.Material.Filled.Help">
+                    <p>Your email and payment information are never shared. Other collectors will see your username, location, and public profile info. You control what personal details to share in your profile.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What grades are acceptable for trading?" Icon="@Icons.Material.Filled.Help">
+                    <p>All grades are acceptable! Fair and Poor condition comics are still valuable to many collectors. Be honest about condition—this builds trust. Collectors should know what they're getting.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I trade variant covers or signed comics?" Icon="@Icons.Material.Filled.Help">
+                    <p>Absolutely! Variant covers, signed comics, and special editions are all tradeable. Make sure to clearly mark these special attributes in your listing and price accordingly.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I become a verified member?" Icon="@Icons.Material.Filled.Help">
+                    <p>Verified members have completed additional identity verification and have a consistent positive trading history. This badge indicates extra trustworthiness. Complete more successful trades to work toward verification.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if I want to cancel an accepted trade?" Icon="@Icons.Material.Filled.Help">
+                    <p>Contact the other collector immediately to discuss. Canceling after items are shipped is more complex. Repeated cancellations can affect your rating and account standing.</p>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </MudItem>
+
+        <MudItem xs="12" Class="mt-6">
+            <MudPaper Elevation="2" Class="pa-6" Style="background: #f5f5f5;">
+                <MudText Typo="Typo.h5" GutterBottom="true">Still Have Questions?</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    If you can't find the answer you're looking for, please don't hesitate to contact our support team.
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="mailto:support@comicbooksexchange.com">
+                    Contact Support
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

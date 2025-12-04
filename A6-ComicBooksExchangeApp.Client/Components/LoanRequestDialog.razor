@@ -1,0 +1,139 @@
+@rendermode InteractiveWebAssembly
+@using MudBlazor
+
+<MudPaper Elevation="2" Class="pa-6" Style="max-width: 600px; margin: 0 auto;">
+    <MudText Typo="Typo.h5" GutterBottom="true">Request to Borrow Comic</MudText>
+    
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        You want to borrow <strong>@RequestedComic</strong> and offer <strong>@OfferedComic</strong> in return.
+    </MudAlert>
+
+    <MudAlert Severity="Severity.Warning" Class="mb-4" Variant="Variant.Outlined">
+        <MudText Typo="Typo.body2">
+            <strong>How it works:</strong> Both comics will be loaned to each other for the same period. 
+            You'll receive their comic, and they'll receive yours. Both comics must be returned after the loan period ends.
+        </MudText>
+    </MudAlert>
+
+    <MudForm @ref="form" @bind-IsValid="isFormValid">
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Loan Duration</MudText>
+        <MudSelect @bind-Value="model.LoanDurationDays" Label="How long do you want to borrow?" FullWidth Variant="Variant.Outlined">
+            <MudSelectItem Value="7">1 Week (7 days)</MudSelectItem>
+            <MudSelectItem Value="14">2 Weeks (14 days)</MudSelectItem>
+            <MudSelectItem Value="30">1 Month (30 days)</MudSelectItem>
+            <MudSelectItem Value="60">2 Months (60 days)</MudSelectItem>
+            <MudSelectItem Value="90">3 Months (90 days)</MudSelectItem>
+        </MudSelect>
+
+        <MudTextField @bind-Value="model.Message"
+            T="string"
+            Label="Your Message"
+            Placeholder="Include any notes about why you'd like to borrow this comic..."
+            Variant="Variant.Outlined"
+            FullWidth
+            MultiLine="true"
+            Lines="4"
+            MaxLength="1000"
+            Counter="1000"
+            Class="mt-4">
+        </MudTextField>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4">Shipping & Handling</MudText>
+        <MudSelect @bind-Value="model.ShippingMethod" Label="Preferred Shipping" FullWidth Variant="Variant.Outlined">
+            <MudSelectItem Value="@("USPS")">USPS</MudSelectItem>
+            <MudSelectItem Value="@("UPS")">UPS</MudSelectItem>
+            <MudSelectItem Value="@("FedEx")">FedEx</MudSelectItem>
+            <MudSelectItem Value="@("Local")">Local Pickup/Drop-off</MudSelectItem>
+        </MudSelect>
+
+        <MudCheckBox T="bool" @bind-Value="model.WithInsurance" Label="Insured Shipping (Recommended for valuable comics)" Class="mt-3"></MudCheckBox>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle1" Class="mb-2"><strong>Comic Details</strong></MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle2"><strong>You want to borrow:</strong></MudText>
+                <MudText Typo="Typo.body2">@RequestedComic</MudText>
+                <MudText Typo="Typo.caption">Value: $@RequestedValue.ToString("F2")</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle2"><strong>You're offering:</strong></MudText>
+                <MudText Typo="Typo.body2">@OfferedComic</MudText>
+                <MudText Typo="Typo.caption">Value: $@OfferedValue.ToString("F2")</MudText>
+            </MudItem>
+        </MudGrid>
+
+        @if (Math.Abs(OfferedValue - RequestedValue) > 50)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4" Variant="Variant.Outlined">
+                There's a significant value difference between these comics. The owner may be less likely to accept if the values don't match closely.
+            </MudAlert>
+        }
+    </MudForm>
+
+    <div Class="mt-6" style="display: flex; gap: 8px;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="!isFormValid">
+            Send Loan Request
+        </MudButton>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string OfferedComic { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RequestedComic { get; set; } = string.Empty;
+
+    [Parameter]
+    public decimal OfferedValue { get; set; }
+
+    [Parameter]
+    public decimal RequestedValue { get; set; }
+
+    [Parameter]
+    public EventCallback<LoanRequestOffer> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private MudForm form = default!;
+    private bool isFormValid;
+    private LoanRequestModel model = new();
+
+    public class LoanRequestModel
+    {
+        public string Message { get; set; } = string.Empty;
+        public int LoanDurationDays { get; set; } = 30;
+        public string ShippingMethod { get; set; } = "USPS";
+        public bool WithInsurance { get; set; } = true;
+    }
+
+    public class LoanRequestOffer
+    {
+        public string Message { get; set; } = string.Empty;
+        public int LoanDurationDays { get; set; }
+        public string ShippingMethod { get; set; } = string.Empty;
+        public bool WithInsurance { get; set; }
+    }
+
+    private async Task Submit()
+    {
+        if (!isFormValid) return;
+
+        var offer = new LoanRequestOffer
+        {
+            Message = model.Message,
+            LoanDurationDays = model.LoanDurationDays,
+            ShippingMethod = model.ShippingMethod,
+            WithInsurance = model.WithInsurance
+        };
+
+        await OnSubmit.InvokeAsync(offer);
+    }
+
+    private async Task Cancel() => await OnCancel.InvokeAsync();
+}

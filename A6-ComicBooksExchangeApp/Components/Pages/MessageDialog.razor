@@ -1,0 +1,106 @@
+@using MudBlazor
+@inject HttpClient Http
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Mail" Class="mr-3" /> Send Message to @ReceiverName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="subject" Label="Subject (Optional)" Variant="Variant.Outlined" Class="mb-4"
+            MaxLength="200" />
+        <MudTextField @bind-Value="content" Label="Message" Variant="Variant.Outlined" Lines="8" MaxLength="2000"
+            Counter="2000" Required="true" Error="@(!string.IsNullOrWhiteSpace(errorMessage))"
+            ErrorText="@errorMessage" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SendMessage" Disabled="@isSending">
+            @if (isSending)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+            }
+            Send
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public int SenderId { get; set; }
+
+    [Parameter]
+    public int ReceiverId { get; set; }
+
+    [Parameter]
+    public string ReceiverName { get; set; } = string.Empty;
+
+    private string? subject;
+    private string content = string.Empty;
+    private bool isSending = false;
+    private string? errorMessage;
+
+    private async Task SendMessage()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            errorMessage = "Message content is required.";
+            return;
+        }
+
+        if (content.Length > 2000)
+        {
+            errorMessage = "Message cannot exceed 2000 characters.";
+            return;
+        }
+
+        isSending = true;
+
+        try
+        {
+            var messageDto = new SendMessageDto
+            {
+                ReceiverId = ReceiverId,
+                Subject = subject,
+                Content = content
+            };
+
+            var response = await Http.PostAsJsonAsync($"http://localhost:5259/api/messages/send/{SenderId}", messageDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                errorMessage = "Failed to send message. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSending = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private class SendMessageDto
+    {
+        public int ReceiverId { get; set; }
+        public string? Subject { get; set; }
+        public string Content { get; set; } = string.Empty;
+    }
+}

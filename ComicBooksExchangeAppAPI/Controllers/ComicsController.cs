@@ -268,44 +268,6 @@ namespace ComicBooksExchangeAppAPI.Controllers
         }
 
         /// <summary>
-        /// Gets key issue comics.
-        /// </summary>
-        /// <returns>A collection of key issue comics.</returns>
-        [HttpGet("filter/keyissues")]
-        public async Task<ActionResult<IEnumerable<Comic>>> GetKeyIssues()
-        {
-            try
-            {
-                var comics = await _comicService.GetKeyIssuesAsync();
-                return Ok(comics);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving key issue comics");
-                return StatusCode(500, "An error occurred while retrieving key issues.");
-            }
-        }
-
-        /// <summary>
-        /// Gets professionally graded comics.
-        /// </summary>
-        /// <returns>A collection of professionally graded comics.</returns>
-        [HttpGet("filter/graded")]
-        public async Task<ActionResult<IEnumerable<Comic>>> GetProfessionallyGraded()
-        {
-            try
-            {
-                var comics = await _comicService.GetProfessionallyGradedAsync();
-                return Ok(comics);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving professionally graded comics");
-                return StatusCode(500, "An error occurred while retrieving graded comics.");
-            }
-        }
-
-        /// <summary>
         /// Gets comics by character.
         /// </summary>
         /// <param name="character">The character name.</param>

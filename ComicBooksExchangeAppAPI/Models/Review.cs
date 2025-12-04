@@ -1,8 +1,8 @@
 namespace ComicBooksExchangeAppAPI.Models
 {
     /// <summary>
-    /// Represents a review and rating given by one collector to another after a completed exchange.
-    /// Essential for building trust in the marketplace and tracking collector reliability.
+    /// Represents a review and rating given by one member to another after a completed loan.
+    /// Essential for building trust in the lending library and tracking member reliability.
     /// </summary>
     public class Review
     {
@@ -32,14 +32,14 @@ namespace ComicBooksExchangeAppAPI.Models
         public virtual User? ReviewedUser { get; set; }
 
         /// <summary>
-        /// Gets or sets the ID of the exchange that prompted this review.
+        /// Gets or sets the ID of the loan that prompted this review.
         /// </summary>
-        public int ExchangeId { get; set; }
+        public int? LoanId { get; set; }
 
         /// <summary>
-        /// Gets or sets the navigation property for the exchange being reviewed.
+        /// Gets or sets the navigation property for the loan being reviewed.
         /// </summary>
-        public virtual Exchange? Exchange { get; set; }
+        public virtual Loan? Loan { get; set; }
 
         /// <summary>
         /// Gets or sets the numeric rating on a 1-5 scale.
@@ -47,7 +47,7 @@ namespace ComicBooksExchangeAppAPI.Models
         public int Rating { get; set; }
 
         /// <summary>
-        /// Gets or sets detailed comments about the exchange experience.
+        /// Gets or sets detailed comments about the loan experience.
         /// </summary>
         public string? Comment { get; set; }
 
@@ -62,7 +62,7 @@ namespace ComicBooksExchangeAppAPI.Models
         public bool ConditionAsDescribed { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the communication with the exchange partner was satisfactory.
+        /// Gets or sets whether the communication with the lending partner was satisfactory.
         /// </summary>
         public bool CommunicationRating { get; set; }
 

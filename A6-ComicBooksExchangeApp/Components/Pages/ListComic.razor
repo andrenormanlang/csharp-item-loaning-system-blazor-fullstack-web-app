@@ -1,0 +1,199 @@
+@page "/list-comic"
+@using MudBlazor
+@using A6_ComicBooksExchangeApp.Services
+@inject ComicApiService ComicService
+@inject NavigationManager Navigation
+@inject ILogger<ListComic> _logger
+
+<PageTitle>Add a Comic</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h4" GutterBottom="true">Add a Comic to Your Library</MudText>
+                <MudText Typo="Typo.body2" Class="mb-6">Add a comic you're willing to lend to other members. Be honest about the condition!</MudText>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <MudAlert Severity="Severity.Success" Class="mb-4">@successMessage</MudAlert>
+                }
+
+                <MudForm @ref="form">
+                    <MudGrid>
+                        <MudItem xs="12" sm="8">
+                            <MudTextField @bind-Value="comic.Title" Label="Comic Title" Variant="Variant.Outlined"
+                                Required="true" Placeholder="e.g., The Amazing Spider-Man"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField @bind-Value="comic.IssueNumber" Label="Issue #"
+                                Variant="Variant.Outlined" Required="true" Min="1"></MudNumericField>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="comic.Publisher" Label="Publisher" Variant="Variant.Outlined"
+                                Required="true" Placeholder="e.g., Marvel, DC, Image"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="comic.Era" Label="Era" Variant="Variant.Outlined" Required="true">
+                                <MudSelectItem Value="@("Golden Age")">Golden Age (1938-1956)</MudSelectItem>
+                                <MudSelectItem Value="@("Silver Age")">Silver Age (1956-1970)</MudSelectItem>
+                                <MudSelectItem Value="@("Bronze Age")">Bronze Age (1970-1985)</MudSelectItem>
+                                <MudSelectItem Value="@("Modern Age")">Modern Age (1985-2011)</MudSelectItem>
+                                <MudSelectItem Value="@("Contemporary")">Contemporary (2011-Present)</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="comic.Characters" Label="Main Characters"
+                                Variant="Variant.Outlined" Placeholder="e.g., Spider-Man, Green Goblin"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudDivider Class="my-2" />
+                            <MudText Typo="Typo.subtitle1" Class="mb-2"><strong>Condition Information</strong></MudText>
+                            <MudText Typo="Typo.caption" Class="mb-3">Help borrowers know what to expect. Be honest - it builds trust!</MudText>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="comic.ConditionGrade" Label="Condition" Variant="Variant.Outlined" Required="true">
+                                <MudSelectItem Value="@("Like New")">Like New - Pristine, barely read</MudSelectItem>
+                                <MudSelectItem Value="@("Very Good")">Very Good - Minor wear, well cared for</MudSelectItem>
+                                <MudSelectItem Value="@("Good")">Good - Normal wear, fully readable</MudSelectItem>
+                                <MudSelectItem Value="@("Acceptable")">Acceptable - Visible wear but complete</MudSelectItem>
+                                <MudSelectItem Value="@("Well-Loved")">Well-Loved - Heavy wear but readable</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="comic.ConditionDescription" Label="Condition Notes (Optional)"
+                                Variant="Variant.Outlined" Multiline="true" Lines="2"
+                                Placeholder="e.g., Small crease on back cover, pages slightly yellowed"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="comic.CoverImageUrl"
+                                Label="Cover Image URL (Optional)" Variant="Variant.Outlined"
+                                HelperText="Leave blank to use default cover image"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="comic.Notes" Label="Notes for Borrowers (Optional)"
+                                Variant="Variant.Outlined" Multiline="true" Lines="2"
+                                Placeholder="e.g., Part of a great story arc! Handle with care."></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12" Class="d-flex gap-2 mt-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit"
+                                Disabled="isLoading">
+                                @if (isLoading)
+                                {
+                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                    <MudText Class="ms-2">Adding...</MudText>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" />
+                                    <MudText>Add to Library</MudText>
+                                }
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel"
+                                Disabled="isLoading">Cancel</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudForm form = null!;
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private class ComicForm
+    {
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; } = 1;
+        public string Publisher { get; set; } = string.Empty;
+        public string Characters { get; set; } = string.Empty;
+        public string ConditionGrade { get; set; } = "Good";
+        public string ConditionDescription { get; set; } = string.Empty;
+        public string Era { get; set; } = "Contemporary";
+        public string? Notes { get; set; }
+        public string? CoverImageUrl { get; set; }
+    }
+
+    private ComicForm comic = new();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            try
+            {
+                // Create DTO for API submission
+                var createComicDto = new CreateComicDto
+                {
+                    Title = comic.Title,
+                    IssueNumber = comic.IssueNumber,
+                    PublicationDate = DateTime.UtcNow,
+                    Publisher = comic.Publisher,
+                    Characters = comic.Characters,
+                    ConditionGrade = comic.ConditionGrade,
+                    ConditionDescription = comic.ConditionDescription,
+                    Era = comic.Era,
+                    OwnerId = 1, // TODO: Get from authenticated user
+                    OwnerNotes = comic.Notes,
+                    CoverImageUrl = string.IsNullOrWhiteSpace(comic.CoverImageUrl) ? "/images/comics/default-cover.svg" : comic.CoverImageUrl
+                };
+
+                // Submit to API
+                bool success = await ComicService.AddComicAsync(createComicDto);
+
+                if (success)
+                {
+                    successMessage = $"'{comic.Title} #{comic.IssueNumber}' added to your library! It's now available for lending.";
+
+                    // Reset form after 2 seconds
+                    await Task.Delay(2000);
+                    comic = new();
+                    await form.ResetAsync();
+                    successMessage = string.Empty;
+                }
+                else
+                {
+                    errorMessage = "Failed to add comic. Please try again.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error adding comic: {ex.Message}";
+                _logger.LogError(ex, "Error in ListComic Submit");
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/my-collection");
+    }
+}

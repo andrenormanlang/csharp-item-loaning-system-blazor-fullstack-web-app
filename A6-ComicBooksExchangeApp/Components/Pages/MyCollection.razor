@@ -1,0 +1,267 @@
+@page "/my-collection"
+@using MudBlazor
+@using Blazored.LocalStorage
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject ILogger<MyCollection> Logger
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>My Library</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <MudText Typo="Typo.h4">My Comic Library</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                    Href="/list-comic">
+                    Add Comic
+                </MudButton>
+            </div>
+            <MudText Typo="Typo.body2" Class="mt-2">Comics you're willing to lend to other members.</MudText>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">Library Statistics</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Elevation="0" Class="pa-4"
+                            Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                            <MudText Typo="Typo.h5" Align="Align.Center">@collectionStats.TotalComics</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center">Total Comics</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Elevation="0" Class="pa-4"
+                            Style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 8px;">
+                            <MudText Typo="Typo.h5" Align="Align.Center">@collectionStats.AvailableForLoan</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center">Available</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Elevation="0" Class="pa-4"
+                            Style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border-radius: 8px;">
+                            <MudText Typo="Typo.h5" Align="Align.Center">@collectionStats.OnLoan</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center">On Loan</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            @if (isLoading)
+            {
+                <MudProgressLinear Indeterminate="true"></MudProgressLinear>
+                <MudText Align="Align.Center" Class="mt-4">Loading your library...</MudText>
+            }
+            else if (comics == null || comics.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">
+                    Your library is empty. <MudLink Href="/list-comic">Add your first comic!</MudLink>
+                </MudAlert>
+            }
+            else
+            {
+                <MudGrid>
+                    @foreach (var comic in comics)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard>
+                                <MudCardMedia Image="@(comic.CoverImageUrl ?? "/images/comics/default-cover.svg")"
+                                    Height="300" />
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">@comic.Title</MudText>
+                                        <MudText Typo="Typo.body2">#@comic.IssueNumber</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                        @comic.Era</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text"
+                                        Class="ml-2">@comic.Publisher</MudChip>
+
+                                    <MudText Typo="Typo.body2" Class="mt-3"><strong>Condition:</strong> @comic.ConditionGrade
+                                    </MudText>
+
+                                    @if (comic.IsAvailable)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                                            Class="mt-2">
+                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
+                                            Available for Loan
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                                            Class="mt-2">
+                                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                                            On Loan
+                                        </MudChip>
+                                    }
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                        StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => EditComic(comic.Id))">Edit
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                        StartIcon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteComic(comic.Id))">
+                                        Remove</MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<ComicDto> comics = new();
+    private bool isLoading = true;
+    private int currentUserId = 0;
+
+    private class CollectionStats
+    {
+        public int TotalComics { get; set; }
+        public int AvailableForLoan { get; set; }
+        public int OnLoan { get; set; }
+    }
+
+    private class ComicDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; }
+        public string Publisher { get; set; } = string.Empty;
+        public string ConditionGrade { get; set; } = string.Empty;
+        public string Era { get; set; } = string.Empty;
+        public bool IsAvailable { get; set; }
+        public string? CoverImageUrl { get; set; }
+    }
+
+    private CollectionStats collectionStats = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Get logged-in user ID from localStorage
+            try
+            {
+                currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+                if (currentUserId <= 0)
+                {
+                    Logger.LogWarning("No logged-in user found");
+                    isLoading = false;
+                    StateHasChanged();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error retrieving user ID from localStorage");
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
+            await LoadCollection();
+        }
+    }
+
+    private async Task LoadCollection()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Call API to get user's comics
+            var response = await Http.GetAsync($"api/comics/user/{currentUserId}");
+            if (response.IsSuccessStatusCode)
+            {
+                comics = await response.Content.ReadFromJsonAsync<List<ComicDto>>() ?? new();
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to load collection: {response.StatusCode}");
+                comics = new();
+            }
+
+            // Calculate statistics
+            collectionStats.TotalComics = comics.Count;
+            collectionStats.AvailableForLoan = comics.Count(c => c.IsAvailable);
+            collectionStats.OnLoan = comics.Count(c => !c.IsAvailable);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading collection");
+            comics = new();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void EditComic(int comicId)
+    {
+        // Navigate to edit page for the comic
+        NavigationManager.NavigateTo($"/edit-comic/{comicId}");
+    }
+
+    private async Task DeleteComic(int comicId)
+    {
+        // Find the comic to show its title in the dialog
+        var comicToDelete = comics.FirstOrDefault(c => c.Id == comicId);
+        if (comicToDelete == null) return;
+
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.ContentText, $"Are you sure you want to remove \"{comicToDelete.Title} #{comicToDelete.IssueNumber}\" from your library? This action cannot be undone." },
+            { x => x.ButtonText, "Delete" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            try
+            {
+                Logger.LogInformation($"Attempting to delete comic with ID: {comicId}");
+
+                var response = await Http.DeleteAsync($"api/comics/{comicId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Logger.LogInformation($"Comic {comicId} deleted successfully");
+                    Snackbar.Add($"'{comicToDelete.Title}' removed from your library", Severity.Success);
+                    await LoadCollection();
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Logger.LogWarning($"Failed to delete comic: {response.StatusCode} - {errorContent}");
+                    Snackbar.Add("Failed to delete comic. Please try again.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error deleting comic");
+                Snackbar.Add("An error occurred while deleting the comic.", Severity.Error);
+            }
+        }
+    }
+}

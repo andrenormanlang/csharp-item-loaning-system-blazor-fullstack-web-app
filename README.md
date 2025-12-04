@@ -1,52 +1,73 @@
-# Comic Books Exchange Marketplace
+# Comic Books Lending Library
 
-A comprehensive full-stack .NET 9 Blazor application for comic book enthusiasts and collectors, specializing in the 45+ demographic. Built with Entity Framework Core, SQL Server, and MudBlazor UI framework.
+A comprehensive full-stack .NET 9 Blazor application for comic book readers, specializing in the 45+ demographic. Built with Entity Framework Core, SQL Server, and MudBlazor UI framework.
 
 ## Project Overview
 
-The Comic Books Exchange Marketplace is designed to connect mature comic book collectors, enabling secure trades of collectible comics with features specifically tailored to experienced collectors who value preservation, investment, and community trust.
+The Comic Books Lending Library is designed to connect mature comic book collectors, enabling free comic book loans between collectors. Users can borrow comics from each other for a specified period, with the requirement that they offer one of their own comics in return. This creates a mutual lending system where both parties benefit.
+
+### Key Concept: Mutual Lending
+
+- **Borrow a comic, lend a comic**: To borrow someone's comic, you must offer one of yours in return
+- **Timed loans**: Comics are loaned for a specific period (7-90 days)
+- **Unavailable while on loan**: Comics that are currently loaned out cannot be borrowed by others
+- **Mutual responsibility**: Both parties are responsible for returning comics in the same condition
 
 ## Architecture
 
 ### Projects
 
-#### 1. **ComicBooksExchangeAppAPI** (ASP.NET Core Web API)
+#### 1. ComicBooksExchangeAppAPI (ASP.NET Core Web API)
+
 REST API backend managing all business logic, data persistence, and service layer.
 
 **Key Components:**
-- **Models**: Domain entities (Comic, User, Exchange, Transaction, Review)
+
+- **Models**: Domain entities (Comic, User, LoanRequest, Loan, Exchange, Transaction, Review)
 - **Data**: Entity Framework Core DbContext and migrations
 - **Repositories**: Generic and specialized repositories implementing the repository pattern
 - **Services**: Business logic layer with async operations
-- **Controllers**: RESTful API endpoints for Comics and Users
+- **Controllers**: RESTful API endpoints for Comics, Users, and Loans
 - **Validators**: Data validation and business rule enforcement
 - **DTOs**: Data transfer objects for API communication
 
-#### 2. **A6-ComicBooksExchangeApp** (Blazor Server Application)
+#### 2. A6-ComicBooksExchangeApp (Blazor Server Application)
+
 Server-side rendering Blazor application providing the primary UI.
 
 **Key Components:**
-- **Components/Pages**: Full-page Razor components (Home, Comics, Profile)
+
+- **Components/Pages**: Full-page Razor components (Home, Comics, Loans, Profile)
 - **Layout**: Navigation and layout components
 - **Services**: Integration with API backend
 
-#### 3. **A6-ComicBooksExchangeApp.Client** (Blazor WebAssembly)
+#### 3. A6-ComicBooksExchangeApp.Client (Blazor WebAssembly)
+
 Client-side interactive components for enhanced UX.
 
 **Key Components:**
+
 - **SearchFilterComponent**: Advanced search with autocomplete
 - **ComicCard**: Interactive comic display component
-- **ExchangeOfferDialog**: Form for proposing trades
+- **LoanRequestDialog**: Form for requesting comic loans
 
 ## Database Schema
 
 ### Tables
 
 - **Users**: Collector profiles with ratings and verification status
-- **Comics**: Comic book listings with condition grades and valuations
-- **Exchanges**: Trade proposals between collectors
-- **Transactions**: Completed exchange records with shipping details
-- **Reviews**: Ratings and feedback after exchanges
+- **Comics**: Comic book listings with condition grades, valuations, and loan status
+- **LoanRequests**: Loan proposals between collectors
+- **Loans**: Active and completed loan records
+- **Reviews**: Ratings and feedback after loans/exchanges
+
+### Loan System Fields
+
+Comics now include:
+
+- `IsOnLoan`: Whether the comic is currently loaned out
+- `CurrentLoanId`: Reference to the active loan
+- `LoanReturnDate`: Expected return date when on loan
 
 ### Key Features
 
@@ -57,7 +78,8 @@ Client-side interactive components for enhanced UX.
 ## API Endpoints
 
 ### Comics
-- `GET /api/comics/available` - Get available comics
+
+- `GET /api/comics/available` - Get available comics (not on loan)
 - `GET /api/comics/{id}` - Get comic details
 - `GET /api/comics/user/{userId}` - Get user's collection
 - `POST /api/comics` - Add new comic
@@ -72,6 +94,7 @@ Client-side interactive components for enhanced UX.
 - `GET /api/comics/filter/publisher?publisher=...` - Filter by publisher
 
 ### Users
+
 - `GET /api/users` - Get all users
 - `GET /api/users/{id}` - Get user profile
 - `GET /api/users/username/{username}` - Get by username
@@ -96,36 +119,51 @@ Client-side interactive components for enhanced UX.
 - **Async/Await** - Asynchronous programming
 - **LINQ** - Language-integrated queries
 
-## Validation & Business Rules
+## Validation and Business Rules
 
 ### Comic Validation
+
 - Condition grades: Mint, Near Mint, Very Fine, Fine, Very Good, Good, Fair, Poor
 - Eras: Golden Age, Silver Age, Bronze Age, Modern Age, Contemporary
 - Estimated value must be non-negative
 - Title and publisher are required
 
 ### User Validation
+
 - Username: 3-50 characters, alphanumeric with hyphens/underscores
 - Email: Standard email validation
 - Collecting focus required
 - Phone number optional but validates if provided
 
 ### Exchange Validation
+
 - Statuses: Pending, Accepted, Shipped, Completed, Cancelled, Disputed
 - Transaction tracking with reference numbers
 - Condition verification on receipt
 
+### Loan Request Validation
+
+- Statuses: Pending, Accepted, Declined, Cancelled, Expired
+- Loan duration: 7-90 days
+- Must offer a comic in return
+
+### Loan Validation
+
+- Statuses: Active, Returned, Overdue, Cancelled
+- Both comics tracked during loan period
+- Return tracking with confirmation
+
 ## Security Considerations
 
-- ✅ API communication via HTTPS
-- ✅ Input validation on all endpoints
-- ✅ CORS configured for WebAssembly client
-- ✅ Database migrations managed through EF Core
-- ✅ Null-safe programming with nullable annotations
+- API communication via HTTPS
+- Input validation on all endpoints
+- CORS configured for WebAssembly client
+- Database migrations managed through EF Core
+- Null-safe programming with nullable annotations
 
 ## Target Demographics
 
-**45+ Comic Book Enthusiast & Collector**
+### 45+ Comic Book Readers
 
 - **Nostalgia-Driven**: Bronze/Silver Age specialists
 - **Investment-Focused**: CGC/CBCS graded collections
@@ -137,6 +175,7 @@ Client-side interactive components for enhanced UX.
 ## Development Guidelines
 
 ### Code Organization
+
 - Namespace hierarchy follows project structure
 - Models in `/Models`
 - Data layer in `/Data`
@@ -147,17 +186,20 @@ Client-side interactive components for enhanced UX.
 - DTOs in `/Models/DTOs`
 
 ### XML Documentation
+
 - All public classes and methods documented with `///` comments
 - Include parameter descriptions
 - Provide return value documentation
 - Note exceptions where applicable
 
 ### Async Operations
+
 - All I/O operations use async/await
 - Service methods return `Task` or `Task<T>`
 - Repository methods support async queries
 
 ### Error Handling
+
 - Try-catch blocks in service layer
 - Meaningful validation messages
 - HTTP status codes align with REST conventions
@@ -180,16 +222,7 @@ Client-side interactive components for enhanced UX.
 
 ## Future Enhancements
 
-- [ ] User authentication and authorization
-- [ ] Message/chat system for collectors
-- [ ] Advanced matching algorithm
-- [ ] Payment integration for additional value trades
-- [ ] Dispute resolution system
-- [ ] Mobile app with Blazor Hybrid
-- [ ] Advanced analytics and statistics
-- [ ] Comic price guide integration
-- [ ] Wishlist and alerts system
-- [ ] Social features (following, collections)
+
 
 ## Contributing
 

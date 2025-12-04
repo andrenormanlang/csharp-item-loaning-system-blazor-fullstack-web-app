@@ -1,0 +1,218 @@
+@page "/comic/{ComicId:int}"
+@using MudBlazor
+@using Blazored.LocalStorage
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject ILogger<ComicDetails> Logger
+
+<PageTitle>Comic Details</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    @if (isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudProgressLinear Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.body2" Align="Align.Center">Loading comic details...</MudText>
+        </MudPaper>
+    }
+    else if (comic == null)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudAlert Severity="Severity.Warning">Comic not found.</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                OnClick="@(() => NavigationManager.NavigateTo("/comics"))">
+                Back to Comics
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Text" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack"
+                    OnClick="@(() => NavigationManager.NavigateTo("/comics"))">
+                    Back to Comics
+                </MudButton>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudImage Src="@(comic.CoverImageUrl ?? "/images/comics/default-cover.svg")" Alt="@comic.Title"
+                        ObjectFit="ObjectFit.Contain" Class="rounded-lg" Style="width: 100%; max-height: 500px;" />
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="8">
+                <MudPaper Elevation="2" Class="pa-6">
+                    <MudText Typo="Typo.h4" GutterBottom="true">@comic.Title</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Primary">Issue #@comic.IssueNumber</MudText>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudGrid>
+                        <MudItem xs="6" sm="4">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Publisher</MudText>
+                            <MudText Typo="Typo.body1"><strong>@comic.Publisher</strong></MudText>
+                        </MudItem>
+                        <MudItem xs="6" sm="4">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Era</MudText>
+                            <MudText Typo="Typo.body1"><strong>@comic.Era</strong></MudText>
+                        </MudItem>
+                        <MudItem xs="6" sm="4">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Condition</MudText>
+                            <MudText Typo="Typo.body1"><strong>@comic.ConditionGrade</strong></MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (!string.IsNullOrEmpty(comic.ConditionDescription))
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mt-4">Condition Notes</MudText>
+                        <MudText Typo="Typo.body2">@comic.ConditionDescription</MudText>
+                    }
+
+                    @if (!string.IsNullOrEmpty(comic.Characters))
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mt-4">Main Characters</MudText>
+                        <MudText Typo="Typo.body2">@comic.Characters</MudText>
+                    }
+
+                    @if (!string.IsNullOrEmpty(comic.OwnerNotes))
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mt-4">Notes from Owner</MudText>
+                        <MudText Typo="Typo.body2">@comic.OwnerNotes</MudText>
+                    }
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.subtitle2">Availability</MudText>
+                    @if (comic.IsOnLoan)
+                    {
+                        <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled"
+                            Icon="@Icons.Material.Filled.Schedule">
+                            Currently on Loan
+                        </MudChip>
+                        @if (comic.LoanReturnDate.HasValue)
+                        {
+                            <MudText Typo="Typo.body2" Class="mt-2">Expected return: @comic.LoanReturnDate.Value.ToShortDateString()
+                            </MudText>
+                        }
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled"
+                            Icon="@Icons.Material.Filled.CheckCircle">
+                            Available for Loan
+                        </MudChip>
+                    }
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.subtitle2">Owner</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                        OnClick="@(() => NavigationManager.NavigateTo($"/profile/{comic.OwnerId}"))">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-1" />
+                        @comic.OwnerUsername
+                    </MudButton>
+
+                    <MudDivider Class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        @if (!comic.IsOnLoan && comic.OwnerId != currentUserId)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                                StartIcon="@Icons.Material.Filled.BookmarkAdd" OnClick="RequestLoan">
+                                Request Loan
+                            </MudButton>
+                        }
+                        else if (comic.OwnerId == currentUserId)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                                StartIcon="@Icons.Material.Filled.Edit"
+                                OnClick="@(() => NavigationManager.NavigateTo($"/edit-comic/{comic.Id}"))">
+                                Edit Comic
+                            </MudButton>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int ComicId { get; set; }
+
+    private ComicDetailDto? comic;
+    private bool isLoading = true;
+    private int currentUserId = 0;
+
+    private class ComicDetailDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; }
+        public string Publisher { get; set; } = string.Empty;
+        public string Characters { get; set; } = string.Empty;
+        public string ConditionGrade { get; set; } = string.Empty;
+        public string? ConditionDescription { get; set; }
+        public string Era { get; set; } = string.Empty;
+        public string? OwnerNotes { get; set; }
+        public bool IsOnLoan { get; set; }
+        public DateTime? LoanReturnDate { get; set; }
+        public int OwnerId { get; set; }
+        public string OwnerUsername { get; set; } = string.Empty;
+        public string? CoverImageUrl { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+        }
+        catch { }
+
+        await LoadComic();
+    }
+
+    private async Task LoadComic()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await Http.GetAsync($"api/comics/{ComicId}");
+            if (response.IsSuccessStatusCode)
+            {
+                comic = await response.Content.ReadFromJsonAsync<ComicDetailDto>();
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to load comic: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading comic details");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void RequestLoan()
+    {
+        if (currentUserId <= 0)
+        {
+            Snackbar.Add("Please log in to request a loan", Severity.Warning);
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        NavigationManager.NavigateTo($"/request-loan/{ComicId}");
+    }
+}

@@ -10,15 +10,12 @@ namespace ComicBooksExchangeAppAPI.Repositories
     /// </summary>
     public class UserRepository : Repository<User>, IUserRepository
     {
-        private readonly ComicBooksExchangeDbContext _context;
-
         /// <summary>
         /// Initializes a new instance of the UserRepository class.
         /// </summary>
         /// <param name="context">The database context.</param>
         public UserRepository(ComicBooksExchangeDbContext context) : base(context)
         {
-            _context = context;
         }
 
         /// <summary>
@@ -30,7 +27,7 @@ namespace ComicBooksExchangeAppAPI.Repositories
         {
             return await _context.Users
                 .Include(u => u.Comics)
-                .Include(u => u.ExchangesInitiated)
+                .Include(u => u.LoanRequestsInitiated)
                 .Include(u => u.ReviewsReceived)
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
@@ -44,7 +41,7 @@ namespace ComicBooksExchangeAppAPI.Repositories
         {
             return await _context.Users
                 .Include(u => u.Comics)
-                .Include(u => u.ExchangesInitiated)
+                .Include(u => u.LoanRequestsInitiated)
                 .Include(u => u.ReviewsReceived)
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
@@ -63,28 +60,14 @@ namespace ComicBooksExchangeAppAPI.Repositories
         }
 
         /// <summary>
-        /// Gets users by collecting focus asynchronously.
+        /// Gets top-rated members asynchronously.
         /// </summary>
-        /// <param name="focus">The collecting focus area.</param>
-        /// <returns>A collection of users with the specified collecting focus.</returns>
-        public async Task<IEnumerable<User>> GetByCollectingFocusAsync(string focus)
-        {
-            return await _context.Users
-                .Where(u => u.CollectingFocus.Contains(focus))
-                .Include(u => u.Comics)
-                .OrderByDescending(u => u.AverageRating)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Gets top-rated collectors asynchronously.
-        /// </summary>
-        /// <param name="count">The number of top collectors to retrieve.</param>
-        /// <returns>A collection of the top-rated collectors.</returns>
+        /// <param name="count">The number of top members to retrieve.</param>
+        /// <returns>A collection of the top-rated members.</returns>
         public async Task<IEnumerable<User>> GetTopRatedAsync(int count = 10)
         {
             return await _context.Users
-                .Where(u => u.SuccessfulExchanges > 0)
+                .Where(u => u.SuccessfulLoans > 0)
                 .Include(u => u.Comics)
                 .OrderByDescending(u => u.AverageRating)
                 .Take(count)
@@ -92,29 +75,15 @@ namespace ComicBooksExchangeAppAPI.Repositories
         }
 
         /// <summary>
-        /// Gets users with successful exchanges asynchronously.
+        /// Gets users with successful loans asynchronously.
         /// </summary>
-        /// <returns>A collection of users sorted by exchange count.</returns>
+        /// <returns>A collection of users sorted by loan count.</returns>
         public async Task<IEnumerable<User>> GetMostActiveAsync()
         {
             return await _context.Users
-                .Where(u => u.SuccessfulExchanges > 0)
+                .Where(u => u.SuccessfulLoans > 0)
                 .Include(u => u.Comics)
-                .OrderByDescending(u => u.SuccessfulExchanges)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Gets users by location for local exchanges asynchronously.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        /// <returns>A collection of users in the specified location.</returns>
-        public async Task<IEnumerable<User>> GetByLocationAsync(string location)
-        {
-            return await _context.Users
-                .Where(u => u.Location != null && u.Location.Contains(location))
-                .Include(u => u.Comics)
-                .OrderBy(u => u.FullName)
+                .OrderByDescending(u => u.SuccessfulLoans)
                 .ToListAsync();
         }
     }

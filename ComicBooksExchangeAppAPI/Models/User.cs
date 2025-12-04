@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace ComicBooksExchangeAppAPI.Models
 {
     /// <summary>
-    /// Represents a user in the comic books exchange marketplace.
-    /// Designed for mature collectors with focus on collector profiles and trust indicators.
+    /// Represents a user in the comic books lending library.
+    /// Designed for mature comic readers with focus on reading preferences and community trust.
     /// </summary>
     public class User
     {
@@ -12,12 +14,12 @@ namespace ComicBooksExchangeAppAPI.Models
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the username for the collector.
+        /// Gets or sets the username for the member.
         /// </summary>
         public string Username { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the full name of the collector.
+        /// Gets or sets the full name of the member.
         /// </summary>
         public string FullName { get; set; } = string.Empty;
 
@@ -26,38 +28,29 @@ namespace ComicBooksExchangeAppAPI.Models
         /// </summary>
         public string Email { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the phone number for exchange coordination.
-        /// </summary>
-        public string? PhoneNumber { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's primary collecting focus area (e.g., "Bronze Age Marvel", "DC Silver Age", "Indie Comics").
-        /// </summary>
-        public string CollectingFocus { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the preferred eras of comics the collector is interested in.
+        /// Gets or sets the preferred eras of comics the collector enjoys.
         /// </summary>
         public string PreferredEras { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the favorite characters or franchises the collector pursues.
+        /// Gets or sets the favorite characters or franchises.
         /// </summary>
         public string FavoriteCharacters { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets a biography or collecting story for the collector.
+        /// Gets or sets a biography or collecting history for the member.
         /// </summary>
         public string? Biography { get; set; }
 
         /// <summary>
-        /// Gets or sets the total number of successful exchanges completed by this user.
+        /// Gets or sets the total number of successful loans completed by this user.
         /// </summary>
-        public int SuccessfulExchanges { get; set; }
+        public int SuccessfulLoans { get; set; }
 
         /// <summary>
-        /// Gets or sets the average rating given by exchange partners (0-5 scale).
+        /// Gets or sets the average rating given by lending partners (0-5 scale).
         /// </summary>
         public decimal AverageRating { get; set; }
 
@@ -72,19 +65,14 @@ namespace ComicBooksExchangeAppAPI.Models
         public bool IsVerified { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's preferred method of exchange (mail, local pickup, hybrid).
+        /// Gets or sets the URL to the user's avatar image.
         /// </summary>
-        public string PreferredExchangeMethod { get; set; } = "Mail";
+        public string? ImageUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's location for local exchange considerations.
+        /// Gets or sets the hashed password for user authentication.
         /// </summary>
-        public string? Location { get; set; }
-
-        /// <summary>
-        /// Gets or sets notes about the collector's preferences and trading style.
-        /// </summary>
-        public string? TradePreferences { get; set; }
+        public string PasswordHash { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the navigation property for comics owned by this user.
@@ -92,9 +80,19 @@ namespace ComicBooksExchangeAppAPI.Models
         public virtual ICollection<Comic> Comics { get; set; } = new List<Comic>();
 
         /// <summary>
-        /// Gets or sets the navigation property for exchanges initiated by this user.
+        /// Gets or sets the navigation property for loan requests initiated by this user.
         /// </summary>
-        public virtual ICollection<Exchange> ExchangesInitiated { get; set; } = new List<Exchange>();
+        public virtual ICollection<LoanRequest> LoanRequestsInitiated { get; set; } = new List<LoanRequest>();
+
+        /// <summary>
+        /// Gets or sets the navigation property for loans where this user is the borrower.
+        /// </summary>
+        public virtual ICollection<Loan> LoansAsBorrower { get; set; } = new List<Loan>();
+
+        /// <summary>
+        /// Gets or sets the navigation property for loans where this user is the lender.
+        /// </summary>
+        public virtual ICollection<Loan> LoansAsLender { get; set; } = new List<Loan>();
 
         /// <summary>
         /// Gets or sets the navigation property for reviews received by this user.

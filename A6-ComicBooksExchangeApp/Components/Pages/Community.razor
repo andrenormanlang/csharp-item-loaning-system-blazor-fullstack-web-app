@@ -1,0 +1,235 @@
+@page "/community"
+@using MudBlazor
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+<PageTitle>Browse Members</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" GutterBottom="true">Community Members</MudText>
+            <MudText Typo="Typo.body2" Class="mb-6">Connect with fellow comic enthusiasts and lenders.</MudText>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h6" GutterBottom="true">Filter Members</MudText>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Search Username</MudText>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Enter username..." FullWidth
+                    Variant="Variant.Outlined" Size="Size.Small"></MudTextField>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Reading Interests</MudText>
+                <MudSelect @bind-Value="selectedFocus" Placeholder="Any Interest" FullWidth Variant="Variant.Outlined"
+                    Size="Size.Small">
+                    <MudSelectItem Value="@("")">Any Focus</MudSelectItem>
+                    <MudSelectItem Value="@("Silver Age Marvel")">Silver Age Marvel</MudSelectItem>
+                    <MudSelectItem Value="@("DC Golden Age")">DC Golden Age</MudSelectItem>
+                    <MudSelectItem Value="@("Independent Comics")">Independent Comics</MudSelectItem>
+                    <MudSelectItem Value="@("Bronze Age Marvel")">Bronze Age Marvel</MudSelectItem>
+                    <MudSelectItem Value="@("Modern Age First Editions")">Modern Age First Editions</MudSelectItem>
+                </MudSelect>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Minimum Rating</MudText>
+                <MudSlider T="decimal" @bind-Value="minRating" Min="1m" Max="5m" Step="0.5m" ValueLabelFormat="F1"
+                    Style="padding: 0 20px;"></MudSlider>
+
+                <MudCheckBox T="bool" @bind-Checked="verifiedOnly" Label="Verified Members Only" Class="mt-4">
+                </MudCheckBox>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth Class="mt-4" OnClick="Search">Search
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="8">
+            @if (isLoading)
+            {
+                <MudProgressLinear Indeterminate="true"></MudProgressLinear>
+                <MudText Align="Align.Center" Class="mt-4">Loading members...</MudText>
+            }
+            else if (members == null || members.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">
+                    No members found matching your criteria.
+                </MudAlert>
+            }
+            else
+            {
+                <MudGrid>
+                    @foreach (var member in members)
+                    {
+                        <MudItem xs="12">
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderAvatar>
+                                        <MudAvatar Image="@member.ImageUrl" Style="height: 64px; width: 64px;"></MudAvatar>
+                                    </CardHeaderAvatar>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">@member.FullName</MudText>
+                                        <MudText Typo="Typo.body2">@member.Username</MudText>
+                                        <MudRating SelectedValue="@((int)member.AverageRating)" ReadOnly="true"
+                                            IconSize="Size.Small" />
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @if (member.IsVerified)
+                                        {
+                                            <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                                                Size="Size.Small">
+                                                Verified
+                                            </MudChip>
+                                        }
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudGrid>
+                                        <MudItem xs="12" sm="6">
+                                            <MudText Typo="Typo.body2"><strong>Location:</strong> @member.Location</MudText>
+                                            <MudText Typo="Typo.body2"><strong>Member Since:</strong> @member.MemberSince.Year
+                                            </MudText>
+                                            <MudText Typo="Typo.body2"><strong>Successful Loans:</strong>
+                                                @member.SuccessfulLoans</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="6">
+                                            <MudText Typo="Typo.body2"><strong>Interests:</strong> @member.ReadingFocus
+                                            </MudText>
+                                            <MudText Typo="Typo.body2"><strong>Preferred Eras:</strong> @member.PreferredEras
+                                            </MudText>
+                                        </MudItem>
+                                    </MudGrid>
+                                    <MudText Typo="Typo.body2" Class="mt-3">@member.Biography</MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                        OnClick="@(() => NavigationManager.NavigateTo($"/profile/{member.Id}"))">
+                                        View Profile
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small"
+                                        OnClick="@(() => OpenMessageDialog(member))">
+                                        Message
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<MemberDto> members = new();
+    private bool isLoading = false;
+    private string searchTerm = string.Empty;
+    private string selectedFocus = string.Empty;
+    private decimal minRating = 1;
+    private bool verifiedOnly = false;
+
+    private class MemberDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public string ReadingFocus { get; set; } = string.Empty;
+        public string PreferredEras { get; set; } = string.Empty;
+        public string FavoriteCharacters { get; set; } = string.Empty;
+        public string? Biography { get; set; }
+        public int SuccessfulLoans { get; set; }
+        public decimal AverageRating { get; set; }
+        public DateTime MemberSince { get; set; }
+        public bool IsVerified { get; set; }
+        public string? Location { get; set; }
+        public string PreferredDeliveryMethod { get; set; } = string.Empty;
+        public string? LendingPreferences { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMembers();
+    }
+
+    private async Task LoadMembers()
+    {
+        isLoading = true;
+        try
+        {
+            // Build query string based on filters
+            var queryParams = new List<string>();
+
+            if (verifiedOnly)
+            {
+                var response = await Http.GetFromJsonAsync<List<MemberDto>>("http://localhost:5259/api/users/filter/verified");
+                members = response ?? new List<MemberDto>();
+            }
+            else
+            {
+                var response = await Http.GetFromJsonAsync<List<MemberDto>>("http://localhost:5259/api/users");
+                members = response ?? new List<MemberDto>();
+            }
+
+            // Apply client-side filtering
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                members = members.Where(m =>
+                m.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                m.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(selectedFocus))
+            {
+                members = members.Where(m =>
+                m.ReadingFocus.Contains(selectedFocus, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+
+            if (minRating > 1m)
+            {
+                members = members.Where(m => m.AverageRating >= minRating).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading members: {ex.Message}");
+            members = new List<MemberDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Search()
+    {
+        await LoadMembers();
+    }
+
+    private async Task OpenMessageDialog(MemberDto member)
+    {
+        // TODO: Get the current logged-in user's ID from authentication state
+        // For now, using a placeholder value of 1
+        var currentUserId = 1;
+
+        var parameters = new DialogParameters
+{
+{ "SenderId", currentUserId },
+{ "ReceiverId", member.Id },
+{ "ReceiverName", member.FullName }
+};
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<MessageDialog>("Send Message", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Message sent successfully - could show a snackbar notification here
+            Console.WriteLine($"Message sent to {member.FullName}");
+        }
+    }
+}

@@ -1,0 +1,123 @@
+@page "/about"
+@using MudBlazor
+
+<PageTitle>About Comic Books Exchange</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <MudText Typo="Typo.h3" GutterBottom="true" Class="font-weight-bold">
+                    About Comic Books Exchange
+                </MudText>
+                <MudText Typo="Typo.subtitle1">
+                    Connecting collectors and preserving comic book culture
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Our Mission</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Comic Books Exchange is dedicated to connecting passionate collectors from around the world. We believe that comic books are not just collectibles—they're works of art, cultural treasures, and sources of joy for millions of fans.
+                </MudText>
+                <MudText Typo="Typo.body2">
+                    Our platform provides a safe, secure, and transparent way for collectors to trade their comics fairly and discover the books that complete their collections.
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Our Values</MudText>
+                <MudList T="string">
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">
+                        <strong>Trust</strong> - All members are verified and reviewed
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">
+                        <strong>Fairness</strong> - Transparent valuation and equal treatment
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">
+                        <strong>Community</strong> - Supporting collectors and the hobby
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">
+                        <strong>Quality</strong> - Attention to condition and authenticity
+                    </MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">How We Started</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Comic Books Exchange was founded by a group of passionate collectors who recognized a gap in the market. Existing platforms were either too commercial or lacked the collector-friendly features needed for fair trades.
+                </MudText>
+                <MudText Typo="Typo.body2">
+                    We built this platform from the ground up with collectors in mind, incorporating feedback from thousands of users to create the premier destination for comic book trades.
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Our Team</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div style="text-align: center;">
+                            <MudAvatar Size="Size.Large" Style="height: 100px; width: 100px; margin: 0 auto 16px;">
+                                <img src="/images/avatars/user-1-avatar.svg" alt="Team Member" />
+                            </MudAvatar>
+                            <MudText Typo="Typo.h6">Alex Chen</MudText>
+                            <MudText Typo="Typo.body2">Founder & CEO</MudText>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div style="text-align: center;">
+                            <MudAvatar Size="Size.Large" Style="height: 100px; width: 100px; margin: 0 auto 16px;">
+                                <img src="/images/avatars/user-2-avatar.svg" alt="Team Member" />
+                            </MudAvatar>
+                            <MudText Typo="Typo.h6">Sarah Martinez</MudText>
+                            <MudText Typo="Typo.body2">VP Operations</MudText>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div style="text-align: center;">
+                            <MudAvatar Size="Size.Large" Style="height: 100px; width: 100px; margin: 0 auto 16px;">
+                                <img src="/images/avatars/user-3-avatar.svg" alt="Team Member" />
+                            </MudAvatar>
+                            <MudText Typo="Typo.h6">James Wilson</MudText>
+                            <MudText Typo="Typo.body2">Tech Lead</MudText>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div style="text-align: center;">
+                            <MudAvatar Size="Size.Large" Style="height: 100px; width: 100px; margin: 0 auto 16px;">
+                                <img src="/images/avatars/user-4-avatar.svg" alt="Team Member" />
+                            </MudAvatar>
+                            <MudText Typo="Typo.h6">Emily Davis</MudText>
+                            <MudText Typo="Typo.body2">Community Manager</MudText>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Contact Us</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.subtitle2">Email</MudText>
+                        <MudLink Href="mailto:support@comicbooksexchange.com">support@comicbooksexchange.com</MudLink>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.subtitle2">Address</MudText>
+                        <MudText Typo="Typo.body2">123 Comic Lane, New York, NY 10001</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

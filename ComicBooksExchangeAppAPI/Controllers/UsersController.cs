@@ -192,16 +192,16 @@ namespace ComicBooksExchangeAppAPI.Controllers
         }
 
         /// <summary>
-        /// Gets top-rated collectors.
+        /// Gets top-rated members.
         /// </summary>
-        /// <param name="count">The number of collectors to retrieve (default: 10).</param>
-        /// <returns>A collection of top-rated collectors.</returns>
+        /// <param name="count">The number of members to retrieve (default: 10).</param>
+        /// <returns>A collection of top-rated members.</returns>
         [HttpGet("filter/toprated")]
         public async Task<ActionResult<IEnumerable<User>>> GetTopRated([FromQuery] int count = 10)
         {
             try
             {
-                var users = await _userService.GetTopRatedCollectorsAsync(count);
+                var users = await _userService.GetTopRatedMembersAsync(count);
                 return Ok(users);
             }
             catch (ArgumentException ex)
@@ -211,82 +211,32 @@ namespace ComicBooksExchangeAppAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving top-rated collectors");
-                return StatusCode(500, "An error occurred while retrieving top-rated collectors.");
+                _logger.LogError(ex, "Error retrieving top-rated members");
+                return StatusCode(500, "An error occurred while retrieving top-rated members.");
             }
         }
 
         /// <summary>
-        /// Gets the most active collectors.
+        /// Gets the most active members.
         /// </summary>
-        /// <returns>A collection of most active collectors.</returns>
+        /// <returns>A collection of most active members.</returns>
         [HttpGet("filter/mostactive")]
         public async Task<ActionResult<IEnumerable<User>>> GetMostActive()
         {
             try
             {
-                var users = await _userService.GetMostActiveCollectorsAsync();
+                var users = await _userService.GetMostActiveMembersAsync();
                 return Ok(users);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving most active collectors");
-                return StatusCode(500, "An error occurred while retrieving most active collectors.");
+                _logger.LogError(ex, "Error retrieving most active members");
+                return StatusCode(500, "An error occurred while retrieving most active members.");
             }
         }
 
         /// <summary>
-        /// Gets collectors by location.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        /// <returns>A collection of collectors in the location.</returns>
-        [HttpGet("filter/location")]
-        public async Task<ActionResult<IEnumerable<User>>> GetByLocation([FromQuery] string location)
-        {
-            try
-            {
-                var users = await _userService.GetCollectorsByLocationAsync(location);
-                return Ok(users);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid location");
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving collectors by location");
-                return StatusCode(500, "An error occurred while retrieving collectors by location.");
-            }
-        }
-
-        /// <summary>
-        /// Gets collectors by collecting focus.
-        /// </summary>
-        /// <param name="focus">The collecting focus.</param>
-        /// <returns>A collection of collectors with the focus.</returns>
-        [HttpGet("filter/focus")]
-        public async Task<ActionResult<IEnumerable<User>>> GetByFocus([FromQuery] string focus)
-        {
-            try
-            {
-                var users = await _userService.GetCollectorsByFocusAsync(focus);
-                return Ok(users);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid collecting focus");
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving collectors by focus");
-                return StatusCode(500, "An error occurred while retrieving collectors by focus.");
-            }
-        }
-
-        /// <summary>
-        /// Increments a user's successful exchange count.
+        /// Increments a user's successful loan count.
         /// </summary>
         /// <param name="id">The user ID.</param>
         /// <returns>No content if successful.</returns>
@@ -332,6 +282,62 @@ namespace ComicBooksExchangeAppAPI.Controllers
             {
                 _logger.LogError(ex, "Error updating rating for user {id}", id);
                 return StatusCode(500, "An error occurred while updating the user's rating.");
+            }
+        }
+
+        /// <summary>
+        /// Checks if a user has active loans.
+        /// </summary>
+        /// <param name="id">The user ID.</param>
+        /// <returns>True if user has active loans.</returns>
+        [HttpGet("{id}/has-active-loans")]
+        public async Task<ActionResult<bool>> HasActiveLoans(int id)
+        {
+            try
+            {
+                var hasActiveLoans = await _userService.HasActiveLoansAsync(id);
+                return Ok(hasActiveLoans);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid user ID: {id}", id);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking active loans for user {id}", id);
+                return StatusCode(500, "An error occurred while checking active loans.");
+            }
+        }
+
+        /// <summary>
+        /// Deletes a user account.
+        /// </summary>
+        /// <param name="id">The user ID to delete.</param>
+        /// <returns>No content if successful.</returns>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                await _userService.DeleteUserAsync(id);
+                _logger.LogInformation("User {id} account deleted successfully", id);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Cannot delete user {id} - has active loans", id);
+                return Conflict(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid user ID for deletion: {id}", id);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user {id}", id);
+                return StatusCode(500, "An error occurred while deleting the account.");
             }
         }
     }

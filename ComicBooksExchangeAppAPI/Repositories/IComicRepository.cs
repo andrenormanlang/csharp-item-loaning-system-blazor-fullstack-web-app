@@ -36,18 +36,6 @@ namespace ComicBooksExchangeAppAPI.Repositories
         Task<IEnumerable<Comic>> GetByConditionGradeAsync(string grade);
 
         /// <summary>
-        /// Gets key issue comics asynchronously.
-        /// </summary>
-        /// <returns>A collection of key issue comics.</returns>
-        Task<IEnumerable<Comic>> GetKeyIssuesAsync();
-
-        /// <summary>
-        /// Gets professionally graded comics asynchronously.
-        /// </summary>
-        /// <returns>A collection of professionally graded comics.</returns>
-        Task<IEnumerable<Comic>> GetProfessionallyGradedAsync();
-
-        /// <summary>
         /// Gets comics by title search asynchronously.
         /// </summary>
         /// <param name="searchTerm">The title search term.</param>

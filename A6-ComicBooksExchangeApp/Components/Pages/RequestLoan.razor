@@ -1,0 +1,251 @@
+@page "/request-loan/{ComicId:int}"
+@using MudBlazor
+@using Blazored.LocalStorage
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject ILogger<RequestLoan> Logger
+
+<PageTitle>Request Loan</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    @if (isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudProgressLinear Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.body2" Align="Align.Center">Loading...</MudText>
+        </MudPaper>
+    }
+    else if (comic == null)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudAlert Severity="Severity.Error">Comic not found or not available for loan.</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                OnClick="@(() => NavigationManager.NavigateTo("/comics"))">
+                Back to Comics
+            </MudButton>
+        </MudPaper>
+    }
+    else if (!isLoggedIn)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudAlert Severity="Severity.Warning">Please log in to request a loan.</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                OnClick="@(() => NavigationManager.NavigateTo("/login"))">
+                Log In
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Text" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack"
+                    OnClick="@(() => NavigationManager.NavigateTo($"/comic/{ComicId}"))">
+                    Back to Comic
+                </MudButton>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudImage Src="@(comic.CoverImageUrl ?? "/images/comics/default-cover.svg")" Alt="@comic.Title"
+                        ObjectFit="ObjectFit.Contain" Class="rounded-lg" Style="width: 100%; max-height: 300px;" />
+                    <MudText Typo="Typo.h6" Class="mt-3" Align="Align.Center">@comic.Title</MudText>
+                    <MudText Typo="Typo.body2" Align="Align.Center">#@comic.IssueNumber</MudText>
+                    <MudText Typo="Typo.caption" Align="Align.Center">Owned by @comic.OwnerUsername</MudText>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="8">
+                <MudPaper Elevation="2" Class="pa-6">
+                    <MudText Typo="Typo.h5" GutterBottom="true">
+                        <MudIcon Icon="@Icons.Material.Filled.BookmarkAdd" Class="mr-2" />
+                        Request to Borrow
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">
+                        Send a loan request to the comic owner. They will review your request and get back to you.
+                    </MudText>
+
+                    <MudForm @ref="form">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudDatePicker @bind-Date="requestedReturnDate" Label="Requested Return Date"
+                                    Variant="Variant.Outlined" Required="true" MinDate="DateTime.Today.AddDays(1)"
+                                    MaxDate="DateTime.Today.AddMonths(3)" HelperText="How long do you need the comic?" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="message" Label="Message to Owner (Optional)"
+                                    Variant="Variant.Outlined" Multiline="true" Lines="3"
+                                    Placeholder="Introduce yourself, explain why you'd like to borrow this comic, etc." />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudAlert Severity="Severity.Info" Class="mb-4">
+                                    <MudText Typo="Typo.body2">
+                                        <strong>Lending Library Guidelines:</strong>
+                                    </MudText>
+                                    <MudList T="string" Dense="true">
+                                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+                                            Handle borrowed comics with care
+                                        </MudListItem>
+                                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+                                            Return by the agreed date
+                                        </MudListItem>
+                                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+                                            Report any damage immediately
+                                        </MudListItem>
+                                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+                                            Leave a review after returning
+                                        </MudListItem>
+                                    </MudList>
+                                </MudAlert>
+                            </MudItem>
+
+                            <MudItem xs="12" Class="d-flex gap-2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                                    StartIcon="@Icons.Material.Filled.Send" OnClick="SubmitRequest"
+                                    Disabled="isSubmitting || !requestedReturnDate.HasValue">
+                                    @if (isSubmitting)
+                                    {
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                        <span>Sending...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Send Request</span>
+                                    }
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                    OnClick="@(() => NavigationManager.NavigateTo($"/comic/{ComicId}"))">
+                                    Cancel
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int ComicId { get; set; }
+
+    private MudForm form = null!;
+    private ComicDto? comic;
+    private bool isLoading = true;
+    private bool isLoggedIn = false;
+    private bool isSubmitting = false;
+    private int currentUserId = 0;
+    private DateTime? requestedReturnDate = DateTime.Today.AddDays(14);
+    private string message = string.Empty;
+
+    private class ComicDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int IssueNumber { get; set; }
+        public int OwnerId { get; set; }
+        public string OwnerUsername { get; set; } = string.Empty;
+        public string? CoverImageUrl { get; set; }
+        public bool IsOnLoan { get; set; }
+        public bool IsAvailable { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+            isLoggedIn = currentUserId > 0;
+        }
+        catch
+        {
+            isLoggedIn = false;
+        }
+
+        await LoadComic();
+    }
+
+    private async Task LoadComic()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await Http.GetAsync($"api/comics/{ComicId}");
+            if (response.IsSuccessStatusCode)
+            {
+                comic = await response.Content.ReadFromJsonAsync<ComicDto>();
+
+                // Check if comic is available
+                if (comic?.IsAvailable == false || comic?.IsOnLoan == true)
+                {
+                    Snackbar.Add("This comic is currently on loan or not available", Severity.Warning);
+                    comic = null;
+                }
+
+                // Check if user is trying to borrow their own comic
+                if (comic?.OwnerId == currentUserId)
+                {
+                    Snackbar.Add("You can't borrow your own comic", Severity.Warning);
+                    NavigationManager.NavigateTo($"/comic/{ComicId}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading comic");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SubmitRequest()
+    {
+        if (!requestedReturnDate.HasValue || comic == null)
+            return;
+
+        isSubmitting = true;
+        try
+        {
+            var loanRequest = new
+            {
+                ComicId = comic.Id,
+                BorrowerId = currentUserId,
+                LenderId = comic.OwnerId,
+                RequestedReturnDate = requestedReturnDate.Value,
+                Message = message,
+                Status = "Pending"
+            };
+
+            var response = await Http.PostAsJsonAsync("api/loans", loanRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Loan request sent successfully!", Severity.Success);
+                NavigationManager.NavigateTo("/loans");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogWarning($"Failed to submit loan request: {response.StatusCode} - {errorContent}");
+                Snackbar.Add("Failed to send loan request. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error submitting loan request");
+            Snackbar.Add("An error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

@@ -28,7 +28,8 @@ namespace ComicBooksExchangeAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetAvailableAsync()
         {
             return await _context.Comics
-                .Where(c => c.IsAvailable)
+                // TODO: Re-enable after implementing authorization
+                // .Where(c => c.IsAvailable)
                 .Include(c => c.Owner)
                 .OrderByDescending(c => c.DateListed)
                 .ToListAsync();
@@ -77,28 +78,29 @@ namespace ComicBooksExchangeAppAPI.Repositories
         }
 
         /// <summary>
-        /// Gets key issue comics asynchronously.
+        /// Gets popular comics by era asynchronously.
         /// </summary>
-        /// <returns>A collection of key issue comics.</returns>
-        public async Task<IEnumerable<Comic>> GetKeyIssuesAsync()
+        /// <returns>A collection of popular era comics.</returns>
+        public async Task<IEnumerable<Comic>> GetPopularEraComicsAsync()
         {
             return await _context.Comics
-                .Where(c => c.IsKeyIssue && c.IsAvailable)
+                .Where(c => (c.Era == "Bronze Age" || c.Era == "Copper Age") && c.IsAvailable)
                 .Include(c => c.Owner)
-                .OrderByDescending(c => c.EstimatedValue)
+                .OrderBy(c => c.Title)
                 .ToListAsync();
         }
 
         /// <summary>
-        /// Gets professionally graded comics asynchronously.
+        /// Gets comics by genre asynchronously.
         /// </summary>
-        /// <returns>A collection of professionally graded comics.</returns>
-        public async Task<IEnumerable<Comic>> GetProfessionallyGradedAsync()
+        /// <param name="genre">The genre to search for.</param>
+        /// <returns>A collection of comics matching the genre.</returns>
+        public async Task<IEnumerable<Comic>> GetByGenreAsync(string genre)
         {
             return await _context.Comics
-                .Where(c => c.IsProfessionallyGraded && c.IsAvailable)
+                .Where(c => c.Genre.Contains(genre) && c.IsAvailable)
                 .Include(c => c.Owner)
-                .OrderByDescending(c => c.EstimatedValue)
+                .OrderBy(c => c.Title)
                 .ToListAsync();
         }
 

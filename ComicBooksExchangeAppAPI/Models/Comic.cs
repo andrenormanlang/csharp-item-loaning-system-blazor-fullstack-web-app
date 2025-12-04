@@ -1,8 +1,8 @@
 namespace ComicBooksExchangeAppAPI.Models
 {
     /// <summary>
-    /// Represents a comic book in the exchange marketplace.
-    /// Includes detailed information for collectors including grading, condition, and era information.
+    /// Represents a comic book in the lending library.
+    /// Includes information about the comic's condition and availability for lending.
     /// </summary>
     public class Comic
     {
@@ -27,7 +27,7 @@ namespace ComicBooksExchangeAppAPI.Models
         public DateTime PublicationDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the primary publisher of the comic (e.g., Marvel, DC, Vertigo).
+        /// Gets or sets the primary publisher of the comic (e.g., Marvel, DC, Dark Horse).
         /// </summary>
         public string Publisher { get; set; } = string.Empty;
 
@@ -36,15 +36,13 @@ namespace ComicBooksExchangeAppAPI.Models
         /// </summary>
         public string Characters { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the original cover price in cents for historical context.
-        /// </summary>
-        public decimal OriginalCoverPrice { get; set; }
+       
+        public string Era { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the current estimated market value in dollars.
+        /// Gets or sets the genre of the comic (e.g., "Superhero", "Horror", "Sci-Fi", "Fantasy").
         /// </summary>
-        public decimal EstimatedValue { get; set; }
+        public string Genre { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the condition grade of the comic (e.g., "Mint", "Near Mint", "Very Fine", "Fine", "Very Good", "Good", "Fair", "Poor").
@@ -52,37 +50,17 @@ namespace ComicBooksExchangeAppAPI.Models
         public string ConditionGrade { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the detailed description of the comic's condition (creases, stains, spine damage, etc.).
+        /// Gets or sets the detailed description of the comic's condition.
         /// </summary>
         public string ConditionDescription { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets whether this comic has been professionally graded by CGC or CBCS.
+        /// Gets or sets a brief description or synopsis of this issue.
         /// </summary>
-        public bool IsProfessionallyGraded { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
-        /// Gets or sets the grading company and grade value if professionally graded (e.g., "CGC 9.2").
-        /// </summary>
-        public string? ProfessionalGradeInfo { get; set; }
-
-        /// <summary>
-        /// Gets or sets the era of the comic (e.g., "Golden Age", "Silver Age", "Bronze Age", "Modern Age").
-        /// </summary>
-        public string Era { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets whether this is the first appearance of a major character or key issue.
-        /// </summary>
-        public bool IsKeyIssue { get; set; }
-
-        /// <summary>
-        /// Gets or sets notes about what makes this a key issue.
-        /// </summary>
-        public string? KeyIssueDescription { get; set; }
-
-        /// <summary>
-        /// Gets or sets the user ID of the owner/collector offering this comic for exchange.
+        /// Gets or sets the user ID of the owner who is lending this comic.
         /// </summary>
         public int OwnerId { get; set; }
 
@@ -92,18 +70,38 @@ namespace ComicBooksExchangeAppAPI.Models
         public virtual User? Owner { get; set; }
 
         /// <summary>
-        /// Gets or sets whether this comic is currently available for exchange.
+        /// Gets or sets whether this comic is currently available for loan.
         /// </summary>
         public bool IsAvailable { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the date when the comic was listed in the marketplace.
+        /// Gets or sets whether this comic is currently on loan.
+        /// </summary>
+        public bool IsOnLoan { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the ID of the current active loan (if on loan).
+        /// </summary>
+        public int? CurrentLoanId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the expected return date if the comic is on loan.
+        /// </summary>
+        public DateTime? LoanReturnDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date when the comic was added to the library.
         /// </summary>
         public DateTime DateListed { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// Gets or sets optional notes from the collector about the comic's history or significance.
+        /// Gets or sets optional notes from the owner about the comic.
         /// </summary>
-        public string? CollectorNotes { get; set; }
+        public string? OwnerNotes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL to the comic book cover image.
+        /// </summary>
+        public string? CoverImageUrl { get; set; } = "/images/comics/default-cover.svg";
     }
 }

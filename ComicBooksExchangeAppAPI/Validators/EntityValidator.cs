@@ -12,7 +12,7 @@ namespace ComicBooksExchangeAppAPI.Validators
         /// <summary>
         /// Valid condition grades for comics.
         /// </summary>
-        public static readonly string[] ValidConditionGrades = 
+        public static readonly string[] ValidConditionGrades =
         {
             "Mint", "Near Mint", "Very Fine", "Fine", "Very Good", "Good", "Fair", "Poor"
         };
@@ -20,7 +20,7 @@ namespace ComicBooksExchangeAppAPI.Validators
         /// <summary>
         /// Valid comic eras.
         /// </summary>
-        public static readonly string[] ValidEras = 
+        public static readonly string[] ValidEras =
         {
             "Golden Age", "Silver Age", "Bronze Age", "Modern Age", "Contemporary"
         };
@@ -28,7 +28,7 @@ namespace ComicBooksExchangeAppAPI.Validators
         /// <summary>
         /// Valid exchange statuses.
         /// </summary>
-        public static readonly string[] ValidExchangeStatuses = 
+        public static readonly string[] ValidExchangeStatuses =
         {
             "Pending", "Accepted", "Shipped", "Completed", "Cancelled", "Disputed"
         };
@@ -36,9 +36,25 @@ namespace ComicBooksExchangeAppAPI.Validators
         /// <summary>
         /// Valid transaction statuses.
         /// </summary>
-        public static readonly string[] ValidTransactionStatuses = 
+        public static readonly string[] ValidTransactionStatuses =
         {
             "Pending", "InTransit", "Received", "Completed", "Disputed"
+        };
+
+        /// <summary>
+        /// Valid loan request statuses.
+        /// </summary>
+        public static readonly string[] ValidLoanRequestStatuses =
+        {
+            "Pending", "Accepted", "Declined", "Cancelled", "Expired"
+        };
+
+        /// <summary>
+        /// Valid loan statuses.
+        /// </summary>
+        public static readonly string[] ValidLoanStatuses =
+        {
+            "Active", "Returned", "Overdue", "Cancelled"
         };
 
         /// <summary>
@@ -79,6 +95,26 @@ namespace ComicBooksExchangeAppAPI.Validators
         public static bool IsValidTransactionStatus(string status)
         {
             return !string.IsNullOrWhiteSpace(status) && ValidTransactionStatuses.Contains(status);
+        }
+
+        /// <summary>
+        /// Validates a loan request status.
+        /// </summary>
+        /// <param name="status">The status to validate.</param>
+        /// <returns>True if valid, otherwise false.</returns>
+        public static bool IsValidLoanRequestStatus(string status)
+        {
+            return !string.IsNullOrWhiteSpace(status) && ValidLoanRequestStatuses.Contains(status);
+        }
+
+        /// <summary>
+        /// Validates a loan status.
+        /// </summary>
+        /// <param name="status">The status to validate.</param>
+        /// <returns>True if valid, otherwise false.</returns>
+        public static bool IsValidLoanStatus(string status)
+        {
+            return !string.IsNullOrWhiteSpace(status) && ValidLoanStatuses.Contains(status);
         }
 
         /// <summary>

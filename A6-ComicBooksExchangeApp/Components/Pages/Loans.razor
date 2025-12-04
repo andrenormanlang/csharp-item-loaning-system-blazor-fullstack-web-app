@@ -1,0 +1,538 @@
+@page "/loans"
+@using MudBlazor
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+@inject ILogger<Loans> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>My Loans</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" GutterBottom="true">My Comic Loans</MudText>
+            <MudText Typo="Typo.body2" Class="mb-6">Manage your comic book loans - both comics you've borrowed and
+                comics you've lent out.</MudText>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTabs>
+                <MudTabPanel Text="Loan Requests">
+                    @if (pendingRequests == null || pendingRequests.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mt-4">
+                            No pending loan requests at the moment.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudGrid Class="mt-4">
+                            @foreach (var request in pendingRequests)
+                            {
+                                var isIncoming = request.OwnerId == currentUserId;
+                                var isOutgoing = request.RequesterId == currentUserId;
+
+                                <MudItem xs="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+                                                @if (isOutgoing)
+                                                {
+                                                    <MudText Typo="Typo.h6">Your Loan Request to @request.OwnerUsername</MudText>
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Info">Outgoing Request</MudChip>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.h6">Loan Request from @request.RequesterUsername</MudText>
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Incoming Request</MudChip>
+                                                }
+                                                <MudText Typo="Typo.body2">@request.DateCreated.ToShortDateString()</MudText>
+                                            </CardHeaderContent>
+                                        </MudCardHeader>
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.subtitle2"><strong>Comic:</strong></MudText>
+                                            <MudText Typo="Typo.body2">@request.RequestedComicTitle</MudText>
+
+                                            <MudText Typo="Typo.body2" Class="mt-3"><strong>Loan Duration:</strong>
+                                                @request.LoanDurationDays days</MudText>
+
+                                            @if (!string.IsNullOrEmpty(request.Message))
+                                            {
+                                                <MudText Typo="Typo.body2" Class="mt-2"><strong>Message:</strong> @request.Message
+                                                </MudText>
+                                            }
+                                        </MudCardContent>
+                                        <MudCardActions>
+                                            @if (isIncoming)
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small"
+                                                    OnClick="@(() => AcceptLoanRequest(request.Id))" Disabled="@isProcessing">
+                                                    Accept
+                                                </MudButton>
+                                                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                                    OnClick="@(() => DeclineLoanRequest(request.Id))" Disabled="@isProcessing">
+                                                    Decline
+                                                </MudButton>
+                                            }
+                                            else
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small"
+                                                    OnClick="@(() => CancelLoanRequest(request.Id))" Disabled="@isProcessing">
+                                                    Cancel Request
+                                                </MudButton>
+                                            }
+                                            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small"
+                                                OnClick="@(() => SendMessage(isIncoming ? request.RequesterId : request.OwnerId))">
+                                                Message
+                                            </MudButton>
+                                        </MudCardActions>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    }
+                </MudTabPanel>
+
+                <MudTabPanel Text="Active Loans">
+                    @if (activeLoans == null || activeLoans.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mt-4">
+                            No active loans at the moment.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudGrid Class="mt-4">
+                            @foreach (var loan in activeLoans)
+                            {
+                                <MudItem xs="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+                                                <MudText Typo="Typo.h6">Loan with @loan.OtherUserName</MudText>
+                                                <MudChip T="string" Color="@(loan.IsOverdue? Color.Error: Color.Info)"
+                                                    Size="Size.Small">
+                                                    @(loan.IsOverdue ? "Overdue" : loan.Status)
+                                                </MudChip>
+                                            </CardHeaderContent>
+                                        </MudCardHeader>
+                                        <MudCardContent>
+                                            <MudGrid>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.subtitle2"><strong>Comic you borrowed:</strong>
+                                                    </MudText>
+                                                    <MudText Typo="Typo.body2">@loan.BorrowedComicTitle
+                                                        #@loan.BorrowedComicIssue</MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.subtitle2"><strong>Comic you lent:</strong></MudText>
+                                                    <MudText Typo="Typo.body2">@loan.LentComicTitle #@loan.LentComicIssue
+                                                    </MudText>
+                                                </MudItem>
+                                            </MudGrid>
+
+                                            <MudDivider Class="my-3" />
+
+                                            <MudGrid>
+                                                <MudItem xs="12" sm="4">
+                                                    <MudText Typo="Typo.caption"><strong>Started:</strong></MudText>
+                                                    <MudText Typo="Typo.body2">@loan.LoanStartDate.ToShortDateString()</MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="4">
+                                                    <MudText Typo="Typo.caption"><strong>Due Date:</strong></MudText>
+                                                    <MudText Typo="Typo.body2"
+                                                        Color="@(loan.IsOverdue ? Color.Error : Color.Default)">
+                                                        @loan.LoanEndDate.ToShortDateString()
+                                                    </MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="4">
+                                                    <MudText Typo="Typo.caption"><strong>Days Remaining:</strong></MudText>
+                                                    <MudText Typo="Typo.body2"
+                                                        Color="@(loan.RemainingDays < 0 ? Color.Error : (loan.RemainingDays <= 7 ? Color.Warning : Color.Default))">
+                                                        @(loan.RemainingDays < 0 ? $"{Math.Abs(loan.RemainingDays)} days                                       overdue" : $"{loan.RemainingDays} days")
+                                                    </MudText>
+                                                </MudItem>
+                                            </MudGrid>
+
+                                            <MudStepper Linear="false" Class="mt-4">
+                                                <MudStep Title="Agreement" Completed="true">
+                                                    Loan agreed on @loan.LoanStartDate.ToShortDateString()
+                                                </MudStep>
+                                                <MudStep Title="Comics Shipped" Completed="@loan.BothShipped">
+                                                    @if (loan.YouShipped && loan.TheyShipped)
+                                                    {
+                                                        <MudText>Both comics have been shipped</MudText>
+                                                    }
+                                                    else if (loan.YouShipped)
+                                                    {
+                                                        <MudText>Waiting for them to ship...</MudText>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                                                            Mark as Shipped</MudButton>
+                                                    }
+                                                </MudStep>
+                                                <MudStep Title="Comics Received" Completed="@loan.BothReceived">
+                                                    @if (loan.YouReceived && loan.TheyReceived)
+                                                    {
+                                                        <MudText>Both parties confirmed receipt</MudText>
+                                                    }
+                                                    else if (!loan.YouReceived)
+                                                    {
+                                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                                                            Confirm Receipt</MudButton>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudText>Waiting for them to confirm receipt...</MudText>
+                                                    }
+                                                </MudStep>
+                                                <MudStep Title="Return Comics">
+                                                    @if (loan.RemainingDays <= 7)
+                                                    {
+                                                        <MudAlert Severity="@(loan.IsOverdue? Severity.Error: Severity.Warning)"
+                                                            Dense="true">
+                                                            @(loan.IsOverdue ? "Please return the comic as soon as possible!" :
+                                                                                                            "Loan period ending soon. Prepare to return comics.")
+                                                        </MudAlert>
+                                                    }
+                                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                                        Class="mt-2">Initiate Return</MudButton>
+                                                </MudStep>
+                                            </MudStepper>
+                                        </MudCardContent>
+                                        <MudCardActions>
+                                            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small">View
+                                                Details</MudButton>
+                                            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small">Message
+                                            </MudButton>
+                                        </MudCardActions>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    }
+                </MudTabPanel>
+
+                <MudTabPanel Text="Completed Loans">
+                    @if (completedLoans == null || completedLoans.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-4">
+                            No completed loans yet.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudGrid Class="mt-4">
+                            @foreach (var loan in completedLoans)
+                            {
+                                <MudItem xs="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+                                                <MudText Typo="Typo.h6">Loan with @loan.OtherUserName</MudText>
+                                                <MudRating @bind-Value="loan.Rating" ReadOnly="true" />
+                                            </CardHeaderContent>
+                                        </MudCardHeader>
+                                        <MudCardContent>
+                                            <MudGrid>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.body2"><strong>Comic borrowed:</strong>
+                                                        @loan.BorrowedComicTitle</MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.body2"><strong>Comic lent:</strong> @loan.LentComicTitle
+                                                    </MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                            <MudText Typo="Typo.body2" Class="mt-2"><strong>Duration:</strong>
+                                                @loan.LoanStartDate.ToShortDateString() - @loan.LoanEndDate.ToShortDateString()
+                                            </MudText>
+                                            <MudText Typo="Typo.body2" Class="mt-2">@loan.Review</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    }
+                </MudTabPanel>
+            </MudTabs>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private int currentUserId = 0;
+    private bool hasRendered = false;
+    private bool isProcessing = false;
+    private List<LoanRequestDto> pendingRequests = new();
+    private List<ActiveLoanDto> activeLoans = new();
+    private List<CompletedLoanDto> completedLoans = new();
+
+    private class LoanRequestDto
+    {
+        public int Id { get; set; }
+        public int RequesterId { get; set; }
+        public string RequesterUsername { get; set; } = string.Empty;
+        public int OwnerId { get; set; }
+        public string OwnerUsername { get; set; } = string.Empty;
+        public int RequestedComicId { get; set; }
+        public string RequestedComicTitle { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int RequestedLoanDurationDays { get; set; }
+        public string? Message { get; set; }
+        public DateTime DateCreated { get; set; }
+        public DateTime? DateResponded { get; set; }
+        public string? ResponseMessage { get; set; }
+
+        // Computed properties for display
+        public string FromUserName => RequesterUsername;
+        public string OfferedComicTitle => "N/A"; // One-way lending
+        public int OfferedComicIssue => 0;
+        public decimal OfferedValue => 0;
+        public int RequestedComicIssue => 0; // Would need to fetch from comic details
+        public decimal RequestedValue => 0; // Would need to fetch from comic details
+        public int LoanDurationDays => RequestedLoanDurationDays;
+    }
+
+    private class LoanDto
+    {
+        public int Id { get; set; }
+        public int BorrowerId { get; set; }
+        public string BorrowerUsername { get; set; } = string.Empty;
+        public int LenderId { get; set; }
+        public string LenderUsername { get; set; } = string.Empty;
+        public int ComicId { get; set; }
+        public string ComicTitle { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime LoanStartDate { get; set; }
+        public DateTime LoanEndDate { get; set; }
+        public DateTime? ActualReturnDate { get; set; }
+    }
+
+    private class ActiveLoanDto
+    {
+        public int Id { get; set; }
+        public string OtherUserName { get; set; } = string.Empty;
+        public string Status { get; set; } = "Active";
+        public string BorrowedComicTitle { get; set; } = string.Empty;
+        public int BorrowedComicIssue { get; set; }
+        public string LentComicTitle { get; set; } = string.Empty;
+        public int LentComicIssue { get; set; }
+        public DateTime LoanStartDate { get; set; }
+        public DateTime LoanEndDate { get; set; }
+        public int RemainingDays { get; set; }
+        public bool IsOverdue { get; set; }
+        public bool YouShipped { get; set; }
+        public bool TheyShipped { get; set; }
+        public bool BothShipped => YouShipped && TheyShipped;
+        public bool YouReceived { get; set; }
+        public bool TheyReceived { get; set; }
+        public bool BothReceived => YouReceived && TheyReceived;
+    }
+
+    private class CompletedLoanDto
+    {
+        public int Id { get; set; }
+        public string OtherUserName { get; set; } = string.Empty;
+        public string BorrowedComicTitle { get; set; } = string.Empty;
+        public string LentComicTitle { get; set; } = string.Empty;
+        public DateTime LoanStartDate { get; set; }
+        public DateTime LoanEndDate { get; set; }
+        public int Rating { get; set; }
+        public string Review { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !hasRendered)
+        {
+            hasRendered = true;
+            try
+            {
+                currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+                if (currentUserId > 0)
+                {
+                    await LoadLoans();
+                    StateHasChanged(); // Trigger re-render with the loaded data
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error initializing Loans page");
+            }
+        }
+    }
+
+    private async Task LoadLoans()
+    {
+        try
+        {
+            // Load loan requests
+            var requestsResponse = await Http.GetAsync($"api/loans/requests/user/{currentUserId}");
+            if (requestsResponse.IsSuccessStatusCode)
+            {
+                var allRequests = await requestsResponse.Content.ReadFromJsonAsync<List<LoanRequestDto>>() ?? new();
+                // Show all pending requests (both incoming and outgoing)
+                pendingRequests = allRequests.Where(r => r.Status == "Pending").ToList();
+                Logger.LogInformation($"Loaded {pendingRequests.Count} pending loan requests (Total: {allRequests.Count})");
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to load loan requests: {requestsResponse.StatusCode}");
+            }
+
+            // Load active loans
+            var loansResponse = await Http.GetAsync($"api/loans/user/{currentUserId}");
+            if (loansResponse.IsSuccessStatusCode)
+            {
+                var allLoans = await loansResponse.Content.ReadFromJsonAsync<List<LoanDto>>() ?? new();
+                
+                // Convert LoanDto to ActiveLoanDto for display
+                activeLoans = allLoans.Where(l => l.Status == "Active").Select(l => new ActiveLoanDto
+                {
+                    Id = l.Id,
+                    OtherUserName = l.BorrowerId == currentUserId ? l.LenderUsername : l.BorrowerUsername,
+                    Status = l.Status,
+                    BorrowedComicTitle = l.ComicTitle,
+                    BorrowedComicIssue = 0, // TODO: Get from comic details
+                    LentComicTitle = "", // TODO: Implement two-way loan
+                    LentComicIssue = 0,
+                    LoanStartDate = l.LoanStartDate,
+                    LoanEndDate = l.LoanEndDate,
+                    RemainingDays = (int)(l.LoanEndDate - DateTime.UtcNow).TotalDays,
+                    IsOverdue = l.LoanEndDate < DateTime.UtcNow,
+                    YouShipped = false, // TODO: Implement shipping tracking
+                    TheyShipped = false,
+                    YouReceived = false,
+                    TheyReceived = false
+                }).ToList();
+                
+                Logger.LogInformation($"Loaded {activeLoans.Count} active loans");
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to load active loans: {loansResponse.StatusCode}");
+                activeLoans = new();
+            }
+
+            completedLoans = new();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading loans");
+            Snackbar.Add("Failed to load loans. Please try again.", Severity.Error);
+        }
+    }
+
+    private async Task AcceptLoanRequest(int requestId)
+    {
+        isProcessing = true;
+        try
+        {
+            var response = await Http.PostAsync($"api/loans/requests/{requestId}/accept", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Loan request accepted successfully!", Severity.Success);
+                await LoadLoans(); // Reload the requests
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to accept loan request: {error}", Severity.Error);
+                Logger.LogWarning($"Failed to accept loan request {requestId}: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error accepting loan request {requestId}");
+            Snackbar.Add("An error occurred while accepting the loan request.", Severity.Error);
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task DeclineLoanRequest(int requestId)
+    {
+        isProcessing = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"api/loans/requests/{requestId}/decline", 
+                new { Message = "Declined" });
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Loan request declined.", Severity.Info);
+                await LoadLoans(); // Reload the requests
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to decline loan request: {error}", Severity.Error);
+                Logger.LogWarning($"Failed to decline loan request {requestId}: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error declining loan request {requestId}");
+            Snackbar.Add("An error occurred while declining the loan request.", Severity.Error);
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task CancelLoanRequest(int requestId)
+    {
+        isProcessing = true;
+        try
+        {
+            // For canceling, we use the decline endpoint since it's the requester canceling
+            var response = await Http.PostAsJsonAsync($"api/loans/requests/{requestId}/decline", 
+                new { Message = "Cancelled by requester" });
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Loan request cancelled.", Severity.Info);
+                await LoadLoans(); // Reload the requests
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to cancel loan request: {error}", Severity.Error);
+                Logger.LogWarning($"Failed to cancel loan request {requestId}: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error cancelling loan request {requestId}");
+            Snackbar.Add("An error occurred while cancelling the loan request.", Severity.Error);
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void SendMessage(int userId)
+    {
+        // Navigate to messages page with the user
+        try
+        {
+            // You can implement this to open a message dialog or navigate to messages
+            Snackbar.Add("Message feature - Navigate to /messages", Severity.Info);
+            // NavigationManager.NavigateTo($"/messages?userId={userId}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error navigating to messages for user {userId}");
+            Snackbar.Add("Failed to open messaging.", Severity.Error);
+        }
+    }
+}

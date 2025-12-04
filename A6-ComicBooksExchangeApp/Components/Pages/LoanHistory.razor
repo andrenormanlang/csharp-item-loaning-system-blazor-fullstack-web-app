@@ -1,0 +1,437 @@
+@page "/loan-history"
+@using MudBlazor
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+@inject ILogger<LoanHistory> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Loan History</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+                My Loan History
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mb-6">
+                View all your completed, returned, and cancelled loans.
+            </MudText>
+        </MudItem>
+
+        @if (isLoading)
+        {
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-6">
+                    <MudProgressLinear Indeterminate="true" Class="mb-4" />
+                    <MudText Typo="Typo.body2" Align="Align.Center">Loading loan history...</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+        else if (!isLoggedIn)
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Warning">
+                    Please <MudLink Href="/login">log in</MudLink> to view your loan history.
+                </MudAlert>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Elevation="0" Class="pa-3" Style="background-color: #e3f2fd; text-align: center;">
+                                <MudText Typo="Typo.h5" Color="Color.Primary">@totalLoans</MudText>
+                                <MudText Typo="Typo.caption">Total Loans</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Elevation="0" Class="pa-3" Style="background-color: #e8f5e9; text-align: center;">
+                                <MudText Typo="Typo.h5" Color="Color.Success">@completedLoans</MudText>
+                                <MudText Typo="Typo.caption">Completed</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Elevation="0" Class="pa-3" Style="background-color: #fff3e0; text-align: center;">
+                                <MudText Typo="Typo.h5" Color="Color.Warning">@cancelledLoans</MudText>
+                                <MudText Typo="Typo.caption">Cancelled</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Elevation="0" Class="pa-3" Style="background-color: #fce4ec; text-align: center;">
+                                <MudText Typo="Typo.h5" Color="Color.Secondary">@overdueLoans</MudText>
+                                <MudText Typo="Typo.caption">Overdue</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                    <MudTabPanel Text="All History" Icon="@Icons.Material.Filled.ViewList">
+                        @if (allLoans == null || allLoans.Count == 0)
+                        {
+                            @if (hasActiveLoans)
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-4">
+                                    You have active loans but no completed history yet. Complete or return your active loans to see them here.
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/loans" Class="mt-2">
+                                        View Active Loans
+                                    </MudButton>
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-4">
+                                    You don't have any loan history yet. Start by 
+                                    <MudLink Href="/comics">browsing available comics</MudLink> to borrow!
+                                </MudAlert>
+                            }
+                        }
+                        else
+                        {
+                            <MudTimeline TimelineOrientation="TimelineOrientation.Vertical">
+                                @foreach (var loan in allLoans.OrderByDescending(l => l.DateCreated))
+                                {
+                                    <MudTimelineItem Color="@GetLoanColor(loan.Status)" Size="Size.Small">
+                                        <MudCard>
+                                            <MudCardHeader>
+                                                <CardHeaderContent>
+                                                    <MudText Typo="Typo.h6">
+                                                        @if (loan.BorrowerId == currentUserId)
+                                                        {
+                                                            <text>Borrowed from @loan.LenderUsername</text>
+                                                        }
+                                                        else
+                                                        {
+                                                            <text>Lent to @loan.BorrowerUsername</text>
+                                                        }
+                                                    </MudText>
+                                                    <MudChip T="string" Size="Size.Small" Color="@GetLoanColor(loan.Status)">
+                                                        @loan.Status
+                                                    </MudChip>
+                                                </CardHeaderContent>
+                                            </MudCardHeader>
+                                            <MudCardContent>
+                                                <MudGrid>
+                                                    <MudItem xs="12" sm="6">
+                                                        <MudText Typo="Typo.subtitle2"><strong>Comic:</strong></MudText>
+                                                        <MudText Typo="Typo.body2">@loan.ComicTitle #@loan.ComicIssue</MudText>
+                                                        <MudText Typo="Typo.caption">@loan.ComicPublisher (@loan.ComicEra)</MudText>
+                                                    </MudItem>
+                                                    <MudItem xs="12" sm="6">
+                                                        <MudText Typo="Typo.subtitle2"><strong>Duration:</strong></MudText>
+                                                        <MudText Typo="Typo.body2">@loan.LoanDurationDays days</MudText>
+                                                        <MudText Typo="Typo.caption">
+                                                            @loan.LoanStartDate?.ToString("MMM dd, yyyy") - @loan.LoanEndDate.ToString("MMM dd, yyyy")
+                                                        </MudText>
+                                                    </MudItem>
+                                                </MudGrid>
+
+                                                @if (loan.ActualReturnDate.HasValue)
+                                                {
+                                                    <MudDivider Class="my-2" />
+                                                    <MudText Typo="Typo.caption" Color="Color.Success">
+                                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> 
+                                                        Returned on @loan.ActualReturnDate.Value.ToString("MMM dd, yyyy")
+                                                    </MudText>
+                                                }
+
+                                                @if (!string.IsNullOrEmpty(loan.Notes))
+                                                {
+                                                    <MudDivider Class="my-2" />
+                                                    <MudText Typo="Typo.body2" Color="Color.Default">
+                                                        <strong>Notes:</strong> @loan.Notes
+                                                    </MudText>
+                                                }
+                                            </MudCardContent>
+                                            <MudCardActions>
+                                                @if (loan.HasReview)
+                                                {
+                                                    <MudRating ReadOnly="true" SelectedValue="@loan.ReviewRating" Size="Size.Small" />
+                                                }
+                                                else if (loan.Status == "Returned" && loan.BorrowerId != currentUserId)
+                                                {
+                                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                                        OnClick="@(() => OpenReviewDialog(loan))">
+                                                        Leave Review
+                                                    </MudButton>
+                                                }
+                                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
+                                                    OnClick="@(() => ViewLoanDetails(loan.Id))">
+                                                    View Details
+                                                </MudButton>
+                                            </MudCardActions>
+                                        </MudCard>
+                                    </MudTimelineItem>
+                                }
+                            </MudTimeline>
+                        }
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="As Borrower" Icon="@Icons.Material.Filled.MenuBook">
+                        @if (borrowerLoans == null || borrowerLoans.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mt-4">
+                                You haven't borrowed any comics yet.
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true">
+                                <thead>
+                                    <tr>
+                                        <th>Comic</th>
+                                        <th>Lender</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Returned</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var loan in borrowerLoans.OrderByDescending(l => l.DateCreated))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <MudText Typo="Typo.body2"><strong>@loan.ComicTitle</strong> #@loan.ComicIssue</MudText>
+                                                <MudText Typo="Typo.caption">@loan.ComicPublisher</MudText>
+                                            </td>
+                                            <td>@loan.LenderUsername</td>
+                                            <td>
+                                                <MudText Typo="Typo.body2">@loan.LoanDurationDays days</MudText>
+                                                <MudText Typo="Typo.caption">
+                                                    @loan.LoanStartDate?.ToString("MMM dd") - @loan.LoanEndDate.ToString("MMM dd, yyyy")
+                                                </MudText>
+                                            </td>
+                                            <td>
+                                                <MudChip T="string" Size="Size.Small" Color="@GetLoanColor(loan.Status)">
+                                                    @loan.Status
+                                                </MudChip>
+                                            </td>
+                                            <td>
+                                                @if (loan.ActualReturnDate.HasValue)
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Success">
+                                                        @loan.ActualReturnDate.Value.ToString("MMM dd, yyyy")
+                                                    </MudText>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.caption">-</MudText>
+                                                }
+                                            </td>
+                                            <td>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                                                    OnClick="@(() => ViewLoanDetails(loan.Id))" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="As Lender" Icon="@Icons.Material.Filled.Handshake">
+                        @if (lenderLoans == null || lenderLoans.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mt-4">
+                                You haven't lent any comics yet. 
+                                <MudLink Href="/list-comic">List your comics</MudLink> to start lending!
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true">
+                                <thead>
+                                    <tr>
+                                        <th>Comic</th>
+                                        <th>Borrower</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Returned</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var loan in lenderLoans.OrderByDescending(l => l.DateCreated))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <MudText Typo="Typo.body2"><strong>@loan.ComicTitle</strong> #@loan.ComicIssue</MudText>
+                                                <MudText Typo="Typo.caption">@loan.ComicPublisher</MudText>
+                                            </td>
+                                            <td>@loan.BorrowerUsername</td>
+                                            <td>
+                                                <MudText Typo="Typo.body2">@loan.LoanDurationDays days</MudText>
+                                                <MudText Typo="Typo.caption">
+                                                    @loan.LoanStartDate?.ToString("MMM dd") - @loan.LoanEndDate.ToString("MMM dd, yyyy")
+                                                </MudText>
+                                            </td>
+                                            <td>
+                                                <MudChip T="string" Size="Size.Small" Color="@GetLoanColor(loan.Status)">
+                                                    @loan.Status
+                                                </MudChip>
+                                            </td>
+                                            <td>
+                                                @if (loan.ActualReturnDate.HasValue)
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Success">
+                                                        @loan.ActualReturnDate.Value.ToString("MMM dd, yyyy")
+                                                    </MudText>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.caption">-</MudText>
+                                                }
+                                            </td>
+                                            <td>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                                                    OnClick="@(() => ViewLoanDetails(loan.Id))" />
+                                                @if (!loan.HasReview && loan.Status == "Returned")
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.RateReview" Size="Size.Small"
+                                                        Color="Color.Primary" OnClick="@(() => OpenReviewDialog(loan))" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudTabPanel>
+                </MudTabs>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool isLoading = true;
+    private bool isLoggedIn = false;
+    private bool hasActiveLoans = false;
+    private int currentUserId = 0;
+    private List<LoanHistoryDto> allLoans = new();
+    private List<LoanHistoryDto> borrowerLoans = new();
+    private List<LoanHistoryDto> lenderLoans = new();
+
+    private int totalLoans => allLoans.Count;
+    private int completedLoans => allLoans.Count(l => l.Status == "Returned");
+    private int cancelledLoans => allLoans.Count(l => l.Status == "Cancelled");
+    private int overdueLoans => allLoans.Count(l => l.Status == "Overdue");
+
+    private class LoanHistoryDto
+    {
+        public int Id { get; set; }
+        public int BorrowerId { get; set; }
+        public string BorrowerUsername { get; set; } = string.Empty;
+        public int LenderId { get; set; }
+        public string LenderUsername { get; set; } = string.Empty;
+        public int ComicId { get; set; }
+        public string ComicTitle { get; set; } = string.Empty;
+        public int ComicIssue { get; set; }
+        public string ComicPublisher { get; set; } = string.Empty;
+        public string ComicEra { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime DateCreated { get; set; }
+        public DateTime? LoanStartDate { get; set; }
+        public DateTime LoanEndDate { get; set; }
+        public DateTime? ActualReturnDate { get; set; }
+        public int LoanDurationDays { get; set; }
+        public string? Notes { get; set; }
+        public bool HasReview { get; set; }
+        public int ReviewRating { get; set; }
+    }
+
+    private async Task LoadLoanHistory()
+    {
+        try
+        {
+            // Load all loans for the user (both as borrower and lender)
+            var response = await Http.GetAsync($"api/loans/history/user/{currentUserId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                allLoans = await response.Content.ReadFromJsonAsync<List<LoanHistoryDto>>() ?? new();
+                borrowerLoans = allLoans.Where(l => l.BorrowerId == currentUserId).ToList();
+                lenderLoans = allLoans.Where(l => l.LenderId == currentUserId).ToList();
+
+                Logger.LogInformation($"Loaded {allLoans.Count} loan history records");
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to load loan history: {response.StatusCode}");
+                Snackbar.Add("Unable to load loan history.", Severity.Warning);
+            }
+
+            // Check if user has active loans
+            var activeResponse = await Http.GetAsync($"api/loans/user/{currentUserId}");
+            if (activeResponse.IsSuccessStatusCode)
+            {
+                var activeLoansJson = await activeResponse.Content.ReadFromJsonAsync<List<ActiveLoanCheckDto>>() ?? new();
+                hasActiveLoans = activeLoansJson.Any(l => l.Status == "Active");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading loan history");
+            Snackbar.Add("Failed to load loan history. Please try again.", Severity.Error);
+        }
+    }
+
+    private class ActiveLoanCheckDto
+    {
+        public int Id { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+            isLoggedIn = currentUserId > 0;
+
+            if (isLoggedIn)
+            {
+                await LoadLoanHistory();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing loan history page");
+            Snackbar.Add("Failed to load loan history. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Color GetLoanColor(string status)
+    {
+        return status switch
+        {
+            "Returned" => Color.Success,
+            "Active" => Color.Info,
+            "Overdue" => Color.Error,
+            "Cancelled" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    private void ViewLoanDetails(int loanId)
+    {
+        Navigation.NavigateTo($"/loans?loanId={loanId}");
+    }
+
+    private void OpenReviewDialog(LoanHistoryDto loan)
+    {
+        // Navigate to review page or open dialog
+        Snackbar.Add("Review feature coming soon!", Severity.Info);
+    }
+}

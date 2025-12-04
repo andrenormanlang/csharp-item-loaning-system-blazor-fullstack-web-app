@@ -1,11 +1,15 @@
-using A6_ComicBooksExchangeApp.Client.Pages;
 using A6_ComicBooksExchangeApp.Components;
+using A6_ComicBooksExchangeApp.Services;
+using Blazored.LocalStorage;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+// Add Blazored LocalStorage service
+builder.Services.AddBlazoredLocalStorage();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -15,10 +19,19 @@ builder.Services.AddRazorComponents()
 // Configure HttpClient for API communication
 builder.Services.AddScoped(sp =>
 {
-    var baseAddress = "https://localhost:7000"; // API project port
+    var baseAddress = "http://localhost:5259"; // Changed from https to http for local dev
     var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
     return client;
 });
+
+// Register API Bridge Services for WebAssembly client
+// These services handle all communication with the backend API
+builder.Services.AddScoped<ComicApiService>();
+builder.Services.AddScoped<UserApiService>();
+builder.Services.AddScoped<AuthService>();
+
+// Register AuthStateProvider as a singleton to share auth state across components
+builder.Services.AddSingleton<AuthStateProvider>();
 
 var app = builder.Build();
 

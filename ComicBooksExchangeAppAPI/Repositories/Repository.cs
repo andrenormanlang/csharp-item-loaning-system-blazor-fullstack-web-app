@@ -10,7 +10,7 @@ namespace ComicBooksExchangeAppAPI.Repositories
     /// <typeparam name="TEntity">The entity type.</typeparam>
     public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     {
-        private readonly ComicBooksExchangeDbContext _context;
+        protected readonly ComicBooksExchangeDbContext _context;
         private readonly DbSet<TEntity> _dbSet;
 
         /// <summary>

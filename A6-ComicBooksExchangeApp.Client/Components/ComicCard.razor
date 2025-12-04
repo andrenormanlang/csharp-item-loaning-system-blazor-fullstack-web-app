@@ -8,8 +8,7 @@
             <MudText Typo="Typo.body2">#@Comic.IssueNumber</MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" 
-                Color="Color.Default"
+            <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default"
                 OnClick="OnFavoriteToggled">
             </MudIconButton>
         </CardHeaderActions>
@@ -19,17 +18,13 @@
         <MudGrid Spacing="1">
             <MudItem xs="12">
                 <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@Comic.Era</MudChip>
-                <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text" Class="ml-2">@Comic.Publisher</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text" Class="ml-2">
+                    @Comic.Publisher</MudChip>
             </MudItem>
 
-            <MudItem xs="6">
+            <MudItem xs="12">
                 <MudText Typo="Typo.caption"><strong>Condition:</strong></MudText>
                 <MudText Typo="Typo.body2">@Comic.ConditionGrade</MudText>
-            </MudItem>
-
-            <MudItem xs="6">
-                <MudText Typo="Typo.caption"><strong>Est. Value:</strong></MudText>
-                <MudText Typo="Typo.body2" Color="Color.Success"><strong>$@Comic.EstimatedValue.ToString("F2")</strong></MudText>
             </MudItem>
 
             @if (!string.IsNullOrEmpty(Comic.Characters))
@@ -40,29 +35,33 @@
                 </MudItem>
             }
 
-            @if (Comic.IsProfessionallyGraded)
-            {
-                <MudItem xs="12">
-                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.CheckCircle">
-                        @Comic.ProfessionalGradeInfo
+            <MudItem xs="12">
+                @if (Comic.IsAvailable)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                        Icon="@Icons.Material.Filled.CheckCircle">
+                        Available for Loan
                     </MudChip>
-                </MudItem>
-            }
-
-            @if (Comic.IsKeyIssue)
-            {
-                <MudItem xs="12">
-                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" Icon="@Icons.Material.Filled.Star">
-                        Key Issue
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                        Icon="@Icons.Material.Filled.Schedule">
+                        On Loan
                     </MudChip>
-                </MudItem>
-            }
+                }
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 
     <MudCardActions>
-        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="OnViewDetails">View Details</MudButton>
-        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary" OnClick="OnMakeOffer">Make Offer</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="OnViewDetails">View Details
+        </MudButton>
+        @if (Comic.IsAvailable)
+        {
+            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary" OnClick="OnMakeOffer">Request Loan
+            </MudButton>
+        }
         <MudSpacer></MudSpacer>
         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default" OnClick="OnContactOwner">
             <MudIcon Icon="@Icons.Material.Filled.Mail"></MudIcon>
@@ -95,10 +94,7 @@
         public string Characters { get; set; } = string.Empty;
         public string Era { get; set; } = string.Empty;
         public string ConditionGrade { get; set; } = string.Empty;
-        public decimal EstimatedValue { get; set; }
-        public bool IsKeyIssue { get; set; }
-        public bool IsProfessionallyGraded { get; set; }
-        public string? ProfessionalGradeInfo { get; set; }
+        public bool IsAvailable { get; set; } = true;
         public int OwnerId { get; set; }
         public string OwnerUsername { get; set; } = string.Empty;
     }

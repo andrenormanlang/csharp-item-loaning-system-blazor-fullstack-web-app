@@ -184,9 +184,9 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public string? Biography { get; set; }
 
         /// <summary>
-        /// Gets or sets the successful exchange count.
+        /// Gets or sets the successful loans count.
         /// </summary>
-        public int SuccessfulExchanges { get; set; }
+        public int SuccessfulLoans { get; set; }
 
         /// <summary>
         /// Gets or sets the average rating.
@@ -204,7 +204,7 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public bool IsVerified { get; set; }
 
         /// <summary>
-        /// Gets or sets the preferred exchange method.
+        /// Gets or sets the preferred shipping method.
         /// </summary>
         public string PreferredExchangeMethod { get; set; } = "Mail";
 
@@ -214,7 +214,7 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public string? Location { get; set; }
 
         /// <summary>
-        /// Gets or sets the trade preferences.
+        /// Gets or sets the lending preferences.
         /// </summary>
         public string? TradePreferences { get; set; }
 

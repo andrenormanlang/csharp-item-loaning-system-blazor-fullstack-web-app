@@ -152,24 +152,6 @@ namespace ComicBooksExchangeAppAPI.Services
         }
 
         /// <summary>
-        /// Gets key issue comics asynchronously.
-        /// </summary>
-        /// <returns>A collection of key issue comics.</returns>
-        public async Task<IEnumerable<Comic>> GetKeyIssuesAsync()
-        {
-            return await _comicRepository.GetKeyIssuesAsync();
-        }
-
-        /// <summary>
-        /// Gets professionally graded comics asynchronously.
-        /// </summary>
-        /// <returns>A collection of professionally graded comics.</returns>
-        public async Task<IEnumerable<Comic>> GetProfessionallyGradedAsync()
-        {
-            return await _comicRepository.GetProfessionallyGradedAsync();
-        }
-
-        /// <summary>
         /// Gets comics by character asynchronously.
         /// </summary>
         /// <param name="character">The character name.</param>
@@ -234,11 +216,6 @@ namespace ComicBooksExchangeAppAPI.Services
             if (string.IsNullOrWhiteSpace(comic.Era))
             {
                 throw new ArgumentException("Era is required.", nameof(comic.Era));
-            }
-
-            if (comic.EstimatedValue < 0)
-            {
-                throw new ArgumentException("Estimated value cannot be negative.", nameof(comic.EstimatedValue));
             }
         }
     }

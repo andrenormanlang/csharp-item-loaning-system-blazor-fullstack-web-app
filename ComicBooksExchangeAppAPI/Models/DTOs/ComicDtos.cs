@@ -49,12 +49,6 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         [Range(0, 9999.99, ErrorMessage = "Original cover price must be between 0 and 9999.99.")]
         public decimal OriginalCoverPrice { get; set; }
 
-        /// <summary>
-        /// Gets or sets the estimated current value.
-        /// </summary>
-        [Required(ErrorMessage = "Estimated value is required.")]
-        [Range(0, 999999.99, ErrorMessage = "Estimated value must be between 0 and 999999.99.")]
-        public decimal EstimatedValue { get; set; }
 
         /// <summary>
         /// Gets or sets the condition grade.
@@ -106,10 +100,10 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public int OwnerId { get; set; }
 
         /// <summary>
-        /// Gets or sets the collector notes.
+        /// Gets or sets the owner notes.
         /// </summary>
-        [StringLength(1000, ErrorMessage = "Collector notes cannot exceed 1000 characters.")]
-        public string? CollectorNotes { get; set; }
+        [StringLength(1000, ErrorMessage = "Owner notes cannot exceed 1000 characters.")]
+        public string? OwnerNotes { get; set; }
     }
 
     /// <summary>
@@ -153,10 +147,6 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         /// </summary>
         public decimal OriginalCoverPrice { get; set; }
 
-        /// <summary>
-        /// Gets or sets the estimated current value.
-        /// </summary>
-        public decimal EstimatedValue { get; set; }
 
         /// <summary>
         /// Gets or sets the condition grade.
@@ -204,9 +194,19 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public string OwnerUsername { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets whether available for exchange.
+        /// Gets or sets whether available for loan.
         /// </summary>
         public bool IsAvailable { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the comic is currently on loan.
+        /// </summary>
+        public bool IsOnLoan { get; set; }
+
+        /// <summary>
+        /// Gets or sets the expected return date if on loan.
+        /// </summary>
+        public DateTime? LoanReturnDate { get; set; }
 
         /// <summary>
         /// Gets or sets the listing date.
@@ -214,8 +214,13 @@ namespace ComicBooksExchangeAppAPI.Models.DTOs
         public DateTime DateListed { get; set; }
 
         /// <summary>
-        /// Gets or sets the collector notes.
+        /// Gets or sets the owner notes.
         /// </summary>
-        public string? CollectorNotes { get; set; }
+        public string? OwnerNotes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL to the comic book cover image.
+        /// </summary>
+        public string? CoverImageUrl { get; set; }
     }
 }

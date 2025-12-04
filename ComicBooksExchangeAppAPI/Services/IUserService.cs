@@ -57,31 +57,17 @@ namespace ComicBooksExchangeAppAPI.Services
         Task<IEnumerable<User>> GetVerifiedUsersAsync();
 
         /// <summary>
-        /// Gets top-rated collectors asynchronously.
+        /// Gets top-rated members asynchronously.
         /// </summary>
-        /// <param name="count">The number of collectors to retrieve.</param>
-        /// <returns>A collection of top-rated collectors.</returns>
-        Task<IEnumerable<User>> GetTopRatedCollectorsAsync(int count = 10);
+        /// <param name="count">The number of members to retrieve.</param>
+        /// <returns>A collection of top-rated members.</returns>
+        Task<IEnumerable<User>> GetTopRatedMembersAsync(int count = 10);
 
         /// <summary>
-        /// Gets the most active collectors asynchronously.
+        /// Gets the most active members asynchronously.
         /// </summary>
-        /// <returns>A collection of most active collectors.</returns>
-        Task<IEnumerable<User>> GetMostActiveCollectorsAsync();
-
-        /// <summary>
-        /// Gets collectors by location asynchronously.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        /// <returns>A collection of collectors in the location.</returns>
-        Task<IEnumerable<User>> GetCollectorsByLocationAsync(string location);
-
-        /// <summary>
-        /// Gets collectors by collecting focus asynchronously.
-        /// </summary>
-        /// <param name="focus">The collecting focus.</param>
-        /// <returns>A collection of collectors with the focus.</returns>
-        Task<IEnumerable<User>> GetCollectorsByFocusAsync(string focus);
+        /// <returns>A collection of most active members.</returns>
+        Task<IEnumerable<User>> GetMostActiveMembersAsync();
 
         /// <summary>
         /// Updates a user's rating based on reviews asynchronously.
@@ -96,5 +82,20 @@ namespace ComicBooksExchangeAppAPI.Services
         /// <param name="userId">The user ID.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task IncrementSuccessfulExchangesAsync(int userId);
+
+        /// <summary>
+        /// Deletes a user account asynchronously.
+        /// </summary>
+        /// <param name="userId">The user ID to delete.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when user has active loans.</exception>
+        Task DeleteUserAsync(int userId);
+
+        /// <summary>
+        /// Checks if a user has any active loans (as borrower or lender).
+        /// </summary>
+        /// <param name="userId">The user ID.</param>
+        /// <returns>True if user has active loans, otherwise false.</returns>
+        Task<bool> HasActiveLoansAsync(int userId);
     }
 }
