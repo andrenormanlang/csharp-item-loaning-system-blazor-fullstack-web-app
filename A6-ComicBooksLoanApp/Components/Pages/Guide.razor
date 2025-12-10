@@ -1,0 +1,227 @@
+@page "/guide"
+@using MudBlazor
+
+<PageTitle>How It Works - Comic Books Lending Library</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6"
+                Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <MudText Typo="Typo.h3" GutterBottom="true" Class="font-weight-bold">
+                    How Comic Lending Works
+                </MudText>
+                <MudText Typo="Typo.subtitle1">
+                    Borrow comics from fellow collectors in Skåne through local meetups. Build community while sharing your collection!
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6" Style="background: #fff3e0;">
+                <MudText Typo="Typo.h5" GutterBottom="true">
+                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
+                    The Core Concept
+                </MudText>
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Our lending library connects comic collectors in Skåne, Sweden. Unlike buying or trading, you 
+                    <strong>borrow</strong> comics temporarily through face-to-face meetups. 
+                    Meet fellow enthusiasts, exchange comics, and build a trusted local community!
+                </MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudIcon Icon="@Icons.Material.Filled.People"
+                                    Style="font-size: 3rem; color: #667eea;" />
+                                <MudText Typo="Typo.h6" Class="mt-2">Local Meetups</MudText>
+                                <MudText Typo="Typo.body2">Meet in person at cafés, libraries, or comic shops in Skåne</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule"
+                                    Style="font-size: 3rem; color: #764ba2;" />
+                                <MudText Typo="Typo.h6" Class="mt-2">Flexible Loans</MudText>
+                                <MudText Typo="Typo.body2">Agree on loan duration that works for both parties</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudIcon Icon="@Icons.Material.Filled.Undo" Style="font-size: 3rem; color: #f093fb;" />
+                                <MudText Typo="Typo.h6" Class="mt-2">Return & Repeat</MudText>
+                                <MudText Typo="Typo.body2">Meet again to return comics, build lasting connections</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudNavMenu>
+                <MudNavLink Href="#step1">Step 1: Create Profile</MudNavLink>
+                <MudNavLink Href="#step2">Step 2: List Comics</MudNavLink>
+                <MudNavLink Href="#step3">Step 3: Browse Comics</MudNavLink>
+                <MudNavLink Href="#step4">Step 4: Request Loan</MudNavLink>
+                <MudNavLink Href="#step5">Step 5: Arrange Meetup</MudNavLink>
+                <MudNavLink Href="#step6">Step 6: Enjoy & Return</MudNavLink>
+            </MudNavMenu>
+        </MudItem>
+
+        <MudItem xs="12" md="9">
+            <MudPaper Elevation="2" Class="pa-6" id="step1">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 1: Create Your Profile</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Start by creating an account and setting up your member profile. Include your location in Skåne to help 
+                    find nearby collectors.
+                </MudText>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">What to include:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">Your city and postal code (Malmö, Lund, Helsingborg, etc.)</MudListItem>
+                    <MudListItem T="string">Your reading focus and collecting style</MudListItem>
+                    <MudListItem T="string">Preferred meetup method (in-person, local delivery)</MudListItem>
+                    <MudListItem T="string">A brief biography about your comic interests</MudListItem>
+                </MudList>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" id="step2">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 2: List Your Comics</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Add the comics you're willing to loan to your library. Be detailed and honest about condition.
+                </MudText>
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <strong>Important:</strong> You need comics in your library to be able to borrow from others!
+                </MudAlert>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Important details:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">Accurate condition grading (check grading guides)</MudListItem>
+                    <MudListItem T="string">Publication details (issue number, era, publisher)</MudListItem>
+                    <MudListItem T="string">Professional grading information if applicable</MudListItem>
+                    <MudListItem T="string">Clear photos or cover image links</MudListItem>
+                    <MudListItem T="string">Any special handling notes</MudListItem>
+                </MudList>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" id="step3">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 3: Browse Available Comics</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Use our search and filter tools to find comics from members near you in Skåne. Look for the green 
+                    "Available" badge.
+                </MudText>
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    Comics marked "On Loan" are unavailable until they're returned.
+                </MudAlert>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Pro tips:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">Filter by era, condition, and publisher</MudListItem>
+                    <MudListItem T="string">Check member location and ratings before requesting</MudListItem>
+                    <MudListItem T="string">Look for members in your city for easier meetups</MudListItem>
+                    <MudListItem T="string">Message members with questions before requesting</MudListItem>
+                    <MudListItem T="string">View member profiles to understand their collecting focus</MudListItem>
+                </MudList>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" id="step4">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 4: Request a Loan</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    When you find a comic you want to borrow, send a loan request to the owner. Include your desired 
+                    loan duration and a friendly message.
+                </MudText>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Your request should include:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">The comic you want to borrow</MudListItem>
+                    <MudListItem T="string">Desired loan duration (typically 1-4 weeks)</MudListItem>
+                    <MudListItem T="string">Preferred meetup location suggestions</MudListItem>
+                    <MudListItem T="string">A friendly message explaining why you want to read it</MudListItem>
+                    <MudListItem T="string">Your availability for meetups</MudListItem>
+                </MudList>
+                <MudAlert Severity="Severity.Info" Class="mt-4">
+                    <strong>Tip:</strong> Be flexible with meetup times and locations to increase acceptance rates!
+                </MudAlert>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" id="step5">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 5: Arrange the Meetup</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Once a loan request is accepted, coordinate with the other member to arrange a meetup for the exchange.
+                </MudText>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Meetup best practices:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">Choose a public, well-lit location (café, library, comic shop)</MudListItem>
+                    <MudListItem T="string">Popular spots: Malmö libraries, Lund centrum, Helsingborg cafés</MudListItem>
+                    <MudListItem T="string">Agree on specific date, time, and location through messages</MudListItem>
+                    <MudListItem T="string">Inspect comic condition together before accepting</MudListItem>
+                    <MudListItem T="string">Take photos for documentation if needed</MudListItem>
+                    <MudListItem T="string">Discuss and agree on return meetup details</MudListItem>
+                </MudList>
+                <MudAlert Severity="Severity.Success" Class="mt-4">
+                    <strong>Safety First:</strong> Always meet in public places during daytime hours!
+                </MudAlert>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" id="step6">
+                <MudText Typo="Typo.h5" GutterBottom="true">Step 6: Enjoy & Return</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Read and enjoy the borrowed comic! When the loan period ends, arrange another meetup to return it 
+                    to the owner.
+                </MudText>
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    <strong>Remember:</strong> Comics must be returned in the same condition. Late returns affect your rating!
+                </MudAlert>
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">During the loan:</MudText>
+                <MudList T="string">
+                    <MudListItem T="string">Handle comics with clean hands</MudListItem>
+                    <MudListItem T="string">Store properly in a safe, dry place</MudListItem>
+                    <MudListItem T="string">Contact the owner if any issues arise</MudListItem>
+                    <MudListItem T="string">Arrange return meetup in advance</MudListItem>
+                    <MudListItem T="string">Return on time at the agreed location</MudListItem>
+                    <MudListItem T="string">Leave a review for your lending partner</MudListItem>
+                </MudList>
+            </MudPaper>
+
+            <MudPaper Elevation="2" Class="pa-6 mt-4" Style="background: #e8f5e9;">
+                <MudText Typo="Typo.h5" GutterBottom="true">
+                    <MudIcon Icon="@Icons.Material.Filled.Security" Class="mr-2" />
+                    Safety & Best Practices
+                </MudText>
+                <MudList T="string">
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Always meet in public, well-lit locations
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Inspect comic condition before accepting
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Keep all initial communication on the platform
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Check user ratings and reviews
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Start with shorter loan periods for new connections
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Trust your instincts - if something feels off, decline
+                    </MudListItem>
+                    <MudListItem T="string" Icon="@Icons.Material.Filled.Check">Report any issues immediately to support
+                    </MudListItem>
+                </MudList>
+                
+                <MudDivider Class="my-4" />
+                
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Class="mr-2" />
+                    Suggested Meetup Locations in Skåne
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    <strong>Malmö:</strong> City Library, Möllevångstorget cafés, Västra Hamnen area
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    <strong>Lund:</strong> University Library, Lund C area, Stadsparken
+                </MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Helsingborg:</strong> Helsingborg City Library, Kärnan area, Central Station
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

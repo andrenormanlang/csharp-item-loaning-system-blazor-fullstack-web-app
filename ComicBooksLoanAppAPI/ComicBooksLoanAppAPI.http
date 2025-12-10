@@ -1,0 +1,6 @@
+@ComicBooksLoanAppAPI_HostAddress = http://localhost:5116
+
+GET {{ComicBooksLoanAppAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

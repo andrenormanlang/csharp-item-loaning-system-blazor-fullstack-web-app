@@ -1,0 +1,477 @@
+@page "/messages"
+@page "/messages/{OtherUserId:int}"
+@using MudBlazor
+@using Blazored.LocalStorage
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject ILogger<Messages> Logger
+@inject ISnackbar Snackbar
+
+<PageTitle>Messages</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    @if (!isAuthenticated)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudAlert Severity="Severity.Warning">Please log in to view your messages.</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/login" Class="mt-4">Go to Login</MudButton>
+        </MudPaper>
+    }
+    else if (isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudProgressLinear Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.body2" Align="Align.Center">Loading messages...</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- Conversations List -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4" Style="height: 70vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <MudText Typo="Typo.h6">Conversations</MudText>
+                        @if (totalUnreadCount > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">@totalUnreadCount unread</MudChip>
+                        }
+                    </div>
+                    <MudDivider Class="mb-3" />
+                    
+                    @if (conversations == null || !conversations.Any())
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">No conversations yet</MudText>
+                    }
+                    else
+                    {
+                        <MudList T="string" Clickable="true">
+                            @foreach (var conv in conversations)
+                            {
+                                var isSelected = selectedUserId == conv.OtherUserId;
+                                var hasUnread = conv.UnreadCount > 0;
+                                var bgColor = isSelected 
+                                    ? "background-color: rgba(var(--mud-palette-primary-rgb), 0.12);" 
+                                    : hasUnread 
+                                        ? "background-color: rgba(var(--mud-palette-info-rgb), 0.08);"
+                                        : "";
+                                
+                                <MudListItem T="string" OnClick="@(() => SelectConversation(conv.OtherUserId))"
+                                    Style="@($"{bgColor} padding-left: 24px; position: relative;")">
+                                    @if (hasUnread)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Circle" 
+                                            Color="Color.Error" 
+                                            Size="Size.Small" 
+                                            Style="position: absolute; left: 4px; top: 50%; transform: translateY(-50%);" />
+                                    }
+                                    <div style="display: flex; align-items: center; width: 100%;">
+                                        <MudAvatar Size="Size.Medium" Class="mr-3" Color="Color.Primary">
+                                            @conv.OtherUsername.First()
+                                        </MudAvatar>
+                                        <div style="flex-grow: 1; overflow: hidden;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                                <MudText Typo="Typo.body1" Style="@(hasUnread ? "font-weight: bold;" : "")">
+                                                    @conv.OtherFullName
+                                                </MudText>
+                                                
+                                            </div>
+                                            <MudText Typo="Typo.caption" 
+                                                Style="@($"white-space: nowrap; overflow: hidden; text-overflow: ellipsis; {(hasUnread ? "font-weight: 600;" : "")}")">
+                                                @conv.LastMessagePreview
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                @FormatMessageDate(conv.LastMessageDate)
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <!-- Message Thread -->
+            <MudItem xs="12" md="8">
+                <MudPaper Elevation="2" Style="height: 70vh; display: flex; flex-direction: column;">
+                    @if (selectedUserId > 0)
+                    {
+                        <!-- Conversation Header -->
+                        <div Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center;">
+                                    <MudAvatar Size="Size.Medium" Class="mr-3" Color="Color.Primary">
+                                        @selectedUserName?.First()
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.h6">@selectedUserFullName</MudText>
+                                        <MudText Typo="Typo.caption">@@@selectedUserName</MudText>
+                                    </div>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Info" OnClick="ViewUserProfile" />
+                            </div>
+                        </div>
+
+                        <!-- Messages Display -->
+                        <div @ref="messageContainer" Class="pa-4" Style="flex-grow: 1; overflow-y: auto;">
+                            @if (currentMessages == null || !currentMessages.Any())
+                            {
+                                <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-8">No messages yet. Start the conversation!</MudText>
+                            }
+                            else
+                            {
+                                @foreach (var msg in currentMessages)
+                                {
+                                    bool isMine = msg.SenderId == currentUserId;
+                                    bool isUnread = !msg.IsRead && msg.ReceiverId == currentUserId;
+                                    
+                                    <div style="@($"display: flex; justify-content: {(isMine ? "flex-end" : "flex-start")}; margin-bottom: 16px;")">
+                                        <div style="@($"max-width: 70%; padding: 12px; border-radius: 8px; position: relative; {(isMine ? "background-color: var(--mud-palette-primary); color: white;" : isUnread ? "background-color: rgba(var(--mud-palette-info-rgb), 0.15); border: 2px solid var(--mud-palette-info);" : "background-color: var(--mud-palette-background-gray);")}")">
+                                            @if (isUnread)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mb-2" Style="height: 20px;">NEW</MudChip>
+                                            }
+                                            @if (!string.IsNullOrEmpty(msg.Subject))
+                                            {
+                                                <MudText Typo="Typo.subtitle2"><strong>@msg.Subject</strong></MudText>
+                                            }
+                                            <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@msg.Content</MudText>
+                                            <MudText Typo="Typo.caption" Class="mt-1" Style="@(isMine ? "color: rgba(255,255,255,0.7);" : "")">
+                                                @msg.SentDate.ToString("MMM dd, hh:mm tt")
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Message Input -->
+                        <div Class="pa-4" Style="border-top: 1px solid var(--mud-palette-divider);">
+                            <MudForm @ref="form">
+                                <MudTextField @bind-Value="newMessageContent"
+                                    T="string"
+                                    Label="Type your message..."
+                                    Variant="Variant.Outlined"
+                                    Lines="3"
+                                    MaxLength="2000"
+                                    Counter="2000"
+                                    FullWidth />
+                                <div Class="mt-2" style="display: flex; justify-content: flex-end;">
+                                    <MudButton Variant="Variant.Filled" 
+                                        Color="Color.Primary" 
+                                        OnClick="SendMessage"
+                                        Disabled="string.IsNullOrWhiteSpace(newMessageContent)"
+                                        StartIcon="@Icons.Material.Filled.Send">
+                                        Send Message
+                                    </MudButton>
+                                </div>
+                            </MudForm>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                            <MudText Typo="Typo.body1" Align="Align.Center">
+                                Select a conversation to view messages
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int? OtherUserId { get; set; }
+
+    private ElementReference messageContainer;
+    private MudForm form = default!;
+    private bool isAuthenticated = false;
+    private bool isLoading = true;
+    private bool hasRendered = false;
+    private int currentUserId = 0;
+    private int selectedUserId = 0;
+    private string selectedUserName = "";
+    private string selectedUserFullName = "";
+    private string newMessageContent = "";
+    private int totalUnreadCount = 0;
+    private List<ConversationDto>? conversations;
+    private List<MessageDto>? currentMessages;
+
+    private class ConversationDto
+    {
+        public int OtherUserId { get; set; }
+        public string OtherUsername { get; set; } = string.Empty;
+        public string OtherFullName { get; set; } = string.Empty;
+        public string? OtherUserImageUrl { get; set; }
+        public string LastMessagePreview { get; set; } = string.Empty;
+        public DateTime LastMessageDate { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    private class MessageDto
+    {
+        public int Id { get; set; }
+        public int SenderId { get; set; }
+        public string SenderUsername { get; set; } = string.Empty;
+        public string SenderFullName { get; set; } = string.Empty;
+        public int ReceiverId { get; set; }
+        public string ReceiverUsername { get; set; } = string.Empty;
+        public string ReceiverFullName { get; set; } = string.Empty;
+        public string? Subject { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public DateTime SentDate { get; set; }
+        public bool IsRead { get; set; }
+    }
+
+    private class SendMessageDto
+    {
+        public int ReceiverId { get; set; }
+        public string? Subject { get; set; }
+        public string Content { get; set; } = string.Empty;
+    }
+
+    private class UserInfo
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            hasRendered = true;
+            try
+            {
+                currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+                isAuthenticated = currentUserId > 0;
+
+                Logger.LogInformation("Messages page initialized. CurrentUserId: {UserId}, IsAuthenticated: {IsAuth}", 
+                    currentUserId, isAuthenticated);
+
+                if (isAuthenticated)
+                {
+                    await LoadConversations();
+
+                    if (OtherUserId.HasValue && OtherUserId.Value > 0)
+                    {
+                        await SelectConversation(OtherUserId.Value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error initializing messages page");
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task LoadConversations()
+    {
+        try
+        {
+            Logger.LogInformation("Loading conversations for user {UserId}", currentUserId);
+            conversations = await Http.GetFromJsonAsync<List<ConversationDto>>($"http://localhost:5259/api/messages/conversations/{currentUserId}");
+            
+            totalUnreadCount = conversations?.Sum(c => c.UnreadCount) ?? 0;
+            Logger.LogInformation("Loaded {Count} conversations, {Unread} unread", conversations?.Count ?? 0, totalUnreadCount);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversations");
+            conversations = new List<ConversationDto>();
+            totalUnreadCount = 0;
+        }
+    }
+
+    private async Task SelectConversation(int otherUserId)
+    {
+        Logger.LogInformation("Selecting conversation with user {OtherUserId}", otherUserId);
+        selectedUserId = otherUserId;
+        
+        var conv = conversations?.FirstOrDefault(c => c.OtherUserId == otherUserId);
+        if (conv != null)
+        {
+            selectedUserName = conv.OtherUsername;
+            selectedUserFullName = conv.OtherFullName;
+        }
+        else
+        {
+            try
+            {
+                var user = await Http.GetFromJsonAsync<UserInfo>($"http://localhost:5259/api/users/{otherUserId}");
+                selectedUserName = user?.Username ?? "";
+                selectedUserFullName = user?.FullName ?? "";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error loading user info for {UserId}", otherUserId);
+            }
+        }
+
+        await LoadConversationMessages();
+    }
+
+    private async Task LoadConversationMessages()
+    {
+        try
+        {
+            Logger.LogInformation("Loading conversation between {User1} and {User2}", currentUserId, selectedUserId);
+            currentMessages = await Http.GetFromJsonAsync<List<MessageDto>>(
+                $"http://localhost:5259/api/messages/conversation/{currentUserId}/{selectedUserId}");
+
+            if (currentMessages != null)
+            {
+                var unreadMessages = currentMessages.Where(m => m.ReceiverId == currentUserId && !m.IsRead).ToList();
+                Logger.LogInformation("Loaded {Count} messages, {Unread} unread", currentMessages.Count, unreadMessages.Count);
+                
+                foreach (var msg in unreadMessages)
+                {
+                    await MarkMessageAsRead(msg.Id);
+                    msg.IsRead = true;
+                }
+
+                if (unreadMessages.Any())
+                {
+                    await LoadConversations();
+                }
+            }
+
+            await Task.Delay(100);
+            await ScrollToBottom();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversation messages");
+            currentMessages = new List<MessageDto>();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessageContent))
+        {
+            Logger.LogWarning("Attempted to send empty message");
+            Snackbar.Add("Message content cannot be empty", Severity.Warning);
+            return;
+        }
+
+        if (selectedUserId <= 0)
+        {
+            Logger.LogWarning("No user selected for message");
+            Snackbar.Add("Please select a conversation first", Severity.Warning);
+            return;
+        }
+
+        if (currentUserId <= 0)
+        {
+            Logger.LogWarning("User not authenticated");
+            Snackbar.Add("Please log in to send messages", Severity.Warning);
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            var dto = new SendMessageDto
+            {
+                ReceiverId = selectedUserId,
+                Content = newMessageContent.Trim()
+            };
+
+            Logger.LogInformation("Sending message from {SenderId} to {ReceiverId}. Content length: {Length}", 
+                currentUserId, selectedUserId, dto.Content.Length);
+
+            var apiUrl = $"http://localhost:5259/api/messages/send/{currentUserId}";
+            Logger.LogInformation("POST to: {Url}", apiUrl);
+
+            var response = await Http.PostAsJsonAsync(apiUrl, dto);
+            
+            Logger.LogInformation("Send message response: {StatusCode}", response.StatusCode);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Logger.LogInformation("Message sent successfully. Response: {Response}", responseContent);
+                
+                newMessageContent = "";
+                Snackbar.Add("Message sent successfully!", Severity.Success);
+                
+                // Reload messages
+                await LoadConversationMessages();
+                await LoadConversations();
+                StateHasChanged();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogError("Failed to send message. Status: {Status}, Error: {Error}", 
+                    response.StatusCode, errorContent);
+                Snackbar.Add($"Failed to send message: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            Logger.LogError(httpEx, "HTTP error sending message");
+            Snackbar.Add($"Network error: {httpEx.Message}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending message");
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task MarkMessageAsRead(int messageId)
+    {
+        try
+        {
+            Logger.LogInformation("Marking message {MessageId} as read", messageId);
+            await Http.PatchAsync($"http://localhost:5259/api/messages/{messageId}/mark-read/{currentUserId}", null);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error marking message {MessageId} as read", messageId);
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        // Implement scroll to bottom if needed using JSInterop
+    }
+
+    private void ViewUserProfile()
+    {
+        Navigation.NavigateTo($"/profile/{selectedUserId}");
+    }
+
+    private string FormatMessageDate(DateTime date)
+    {
+        var now = DateTime.Now;
+        var diff = now - date;
+
+        if (diff.TotalMinutes < 1)
+            return "Just now";
+        if (diff.TotalHours < 1)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalDays < 1)
+            return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}d ago";
+        
+        return date.ToString("MMM dd");
+    }
+}

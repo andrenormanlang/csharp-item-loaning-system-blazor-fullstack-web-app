@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="A6-ComicBooksLoanApp.Client/A6-ComicBooksLoanApp.Client.csproj" />
+  <Project Path="A6-ComicBooksLoanApp/A6-ComicBooksLoanApp.csproj" />
+  <Project Path="ComicBooksLoanAppAPI/ComicBooksLoanAppAPI.csproj" />
+</Solution>

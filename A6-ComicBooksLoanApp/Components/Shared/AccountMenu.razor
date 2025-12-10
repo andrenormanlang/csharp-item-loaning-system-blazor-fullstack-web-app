@@ -1,0 +1,27 @@
+@using MudBlazor
+
+<MudList T="string" Dense="true">
+    <MudListItem T="string" Href="/profile">
+        <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+        My Profile
+    </MudListItem>
+
+    <MudListItem T="string" Href="/messages">
+        <MudIcon Icon="@Icons.Material.Filled.Mail" Class="mr-2" />
+        Messages
+        <UnreadMessagesBadge />
+    </MudListItem>
+
+    <MudListItem T="string" OnClick="@Logout">
+        <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-2" />
+        Logout
+    </MudListItem>
+</MudList>
+
+@code {
+    private void Logout()
+    {
+        // navigate to logout or invoke auth service
+        // NavigationManager.NavigateTo("/logout");
+    }
+}

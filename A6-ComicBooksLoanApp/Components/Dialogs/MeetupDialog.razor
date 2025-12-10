@@ -1,0 +1,183 @@
+@using MudBlazor
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject ILogger<MeetupDialog> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">@Title</MudText>
+        
+        @if (!string.IsNullOrEmpty(OtherUserName))
+        {
+            <MudText Typo="Typo.body2" Class="mb-4">
+                Arrange a meetup with <strong>@OtherUserName</strong> to @(IsReturnMeetup ? "return" : "exchange") the comic.
+            </MudText>
+        }
+
+        @if (!string.IsNullOrEmpty(ComicTitle))
+        {
+            <MudText Typo="Typo.caption" Class="mb-4" Color="Color.Secondary">
+                Comic: @ComicTitle
+            </MudText>
+        }
+
+        <MudDivider Class="mb-4" />
+
+        <MudForm @ref="form">
+            <MudTextField @bind-Value="location" 
+                Label="Meetup Location" 
+                Variant="Variant.Outlined"
+                HelperText="Enter a specific location in Skåne, Sweden"
+                Required="true"
+                Class="mb-4" />
+
+            <MudDatePicker @bind-Date="meetupDate" 
+                Label="Meetup Date" 
+                Variant="Variant.Outlined"
+                MinDate="DateTime.Today"
+                Required="true"
+                Class="mb-3" />
+
+            <MudTimePicker @bind-Time="meetupTime" 
+                Label="Meetup Time" 
+                Variant="Variant.Outlined"
+                Required="true"
+                Class="mb-4" />
+
+            <MudTextField @bind-Value="notes" 
+                Label="Additional Notes (Optional)" 
+                Variant="Variant.Outlined"
+                Lines="3"
+                MaxLength="500"
+                Counter="500"
+                HelperText="Any additional information about the meetup"
+                Class="mb-4" />
+
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                <strong>Tip:</strong> Choose a public, well-lit location for safety. Both parties will be notified of the meetup details.
+            </MudAlert>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default">Cancel</MudButton>
+        <MudButton OnClick="Submit" Color="Color.Primary" Variant="Variant.Filled" 
+            Disabled="@(isSubmitting || string.IsNullOrWhiteSpace(location) || !meetupDate.HasValue || !meetupTime.HasValue)">
+            @if (isSubmitting)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Arranging...</MudText>
+            }
+            else
+            {
+                <text>Arrange Meetup</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int LoanId { get; set; }
+
+    [Parameter]
+    public string OtherUserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ComicTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsReturnMeetup { get; set; } = false;
+
+    [Parameter]
+    public string Title { get; set; } = "Arrange Meetup";
+
+    private MudForm form = null!;
+    private string location = string.Empty;
+    private DateTime? meetupDate = DateTime.Today.AddDays(1);
+    private TimeSpan? meetupTime = new TimeSpan(14, 0, 0); // Default to 2 PM
+    private string notes = string.Empty;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            errorMessage = "Please enter a meetup location.";
+            return;
+        }
+
+        if (!meetupDate.HasValue || !meetupTime.HasValue)
+        {
+            errorMessage = "Please select a date and time for the meetup.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var meetupDateTime = meetupDate.Value.Date + meetupTime.Value;
+
+            var meetupDto = new ArrangeMeetupDto
+            {
+                LoanId = LoanId,
+                MeetupLocation = location,
+                MeetupDateTime = meetupDateTime,
+                Notes = notes,
+                IsReturnMeetup = IsReturnMeetup
+            };
+
+            var endpoint = IsReturnMeetup 
+                ? $"api/loans/{LoanId}/arrange-return-meetup" 
+                : $"api/loans/{LoanId}/arrange-meetup";
+
+            var response = await Http.PostAsJsonAsync(endpoint, meetupDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"{(IsReturnMeetup ? "Return" : "Initial")} meetup arranged successfully!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Failed to arrange meetup: {error}";
+                Logger.LogWarning($"Failed to arrange meetup: {response.StatusCode} - {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error arranging meetup");
+            errorMessage = "An error occurred while arranging the meetup. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public class ArrangeMeetupDto
+    {
+        public int LoanId { get; set; }
+        public string MeetupLocation { get; set; } = string.Empty;
+        public DateTime MeetupDateTime { get; set; }
+        public string? Notes { get; set; }
+        public bool IsReturnMeetup { get; set; }
+    }
+}

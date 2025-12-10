@@ -1,0 +1,49 @@
+@using MudBlazor
+@using Blazored.LocalStorage
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+
+@if (isLoaded && unreadCount > 0)
+{
+    <MudBadge Color="Color.Error" Content="@unreadCount" Overlap="true" Class="ml-2">
+        <MudIcon Icon="@Icons.Material.Filled.Circle" Size="Size.Small" Style="visibility: hidden;" />
+    </MudBadge>
+}
+
+@code {
+    private int unreadCount;
+    private bool isLoaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUnreadCount();
+    }
+
+    private async Task LoadUnreadCount()
+    {
+        try
+        {
+            var userId = await LocalStorage.GetItemAsync<int>("currentUserId");
+            if (userId > 0)
+            {
+                unreadCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{userId}");
+            }
+        }
+        catch
+        {
+            unreadCount = 0;
+        }
+        finally
+        {
+            isLoaded = true;
+        }
+    }
+
+    // Public method to refresh the count (can be called from parent components)
+    public async Task RefreshCount()
+    {
+        isLoaded = false;
+        await LoadUnreadCount();
+        StateHasChanged();
+    }
+}

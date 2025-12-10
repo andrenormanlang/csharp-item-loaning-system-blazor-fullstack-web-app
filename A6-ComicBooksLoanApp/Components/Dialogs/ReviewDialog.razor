@@ -1,0 +1,195 @@
+@using MudBlazor
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject ILogger<ReviewDialog> Logger
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">Leave a Review</MudText>
+        
+        @if (!string.IsNullOrEmpty(OtherUserName))
+        {
+            <MudText Typo="Typo.body2" Class="mb-4">
+                Review your experience with <strong>@OtherUserName</strong>
+            </MudText>
+        }
+
+        @if (!string.IsNullOrEmpty(ComicTitle))
+        {
+            <MudText Typo="Typo.caption" Class="mb-4" Color="Color.Secondary">
+                Comic: @ComicTitle
+            </MudText>
+        }
+
+        <MudDivider Class="mb-4" />
+
+        <MudForm @ref="form">
+            <MudRating @bind-SelectedValue="rating" Size="Size.Large" Class="mb-4" />
+            <MudText Typo="Typo.caption" Class="mb-4">
+                @GetRatingText()
+            </MudText>
+
+            <MudTextField @bind-Value="comment" Label="Your Review" Variant="Variant.Outlined"
+                Lines="4" MaxLength="1000" Counter="1000"
+                HelperText="Share your experience with this member" Class="mb-4" />
+
+            <MudText Typo="Typo.subtitle2" Class="mb-2"><strong>Rate the Experience</strong></MudText>
+            
+            <MudCheckBox T="bool" @bind-Checked="conditionAsDescribed" Label="Comic was in the condition described" 
+                Color="Color.Primary" Class="mb-2" />
+            
+            <MudCheckBox T="bool" @bind-Checked="communicationGood" Label="Good communication and responsiveness" 
+                Color="Color.Primary" Class="mb-2" />
+            
+            <MudCheckBox T="bool" @bind-Checked="meetupExperience" Label="Meetup was punctual and professional" 
+                Color="Color.Primary" Class="mb-4" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default">Cancel</MudButton>
+        <MudButton OnClick="Submit" Color="Color.Primary" Variant="Variant.Filled" 
+            Disabled="@(isSubmitting || rating == 0)">
+            @if (isSubmitting)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Submitting...</MudText>
+            }
+            else
+            {
+                <text>Submit Review</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int LoanId { get; set; }
+
+    [Parameter]
+    public int ReviewerId { get; set; }
+
+    [Parameter]
+    public string OtherUserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ComicTitle { get; set; } = string.Empty;
+
+    private MudForm form = null!;
+    private int rating = 0;
+    private string comment = string.Empty;
+    private bool conditionAsDescribed = true;
+    private bool communicationGood = true;
+    private bool meetupExperience = true;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    private string GetRatingText()
+    {
+        return rating switch
+        {
+            0 => "Select a rating",
+            1 => "Poor - Would not recommend",
+            2 => "Fair - Below expectations",
+            3 => "Good - Met expectations",
+            4 => "Very Good - Exceeded expectations",
+            5 => "Excellent - Outstanding experience!",
+            _ => ""
+        };
+    }
+
+    private async Task Submit()
+    {
+        if (rating == 0)
+        {
+            errorMessage = "Please select a rating.";
+            return;
+        }
+
+        // Show confirmation dialog before submitting
+        var confirmParams = new DialogParameters
+        {
+            { "ContentText", $"Submit this {rating}-star review? This action cannot be undone." },
+            { "ButtonText", "Submit Review" },
+            { "Color", Color.Primary }
+        };
+
+        var confirmDialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Review", confirmParams);
+        var confirmResult = await confirmDialog.Result;
+
+        if (confirmResult.Canceled)
+        {
+            return; // User cancelled
+        }
+
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            Logger.LogInformation("Submitting review for loan {loanId}, reviewer {reviewerId}, rating {rating}", 
+                LoanId, ReviewerId, rating);
+
+            var reviewDto = new CreateReviewDto
+            {
+                ReviewerId = ReviewerId,
+                LoanId = LoanId,
+                Rating = rating,
+                Comment = comment,
+                ConditionAsDescribed = conditionAsDescribed,
+                CommunicationGood = communicationGood,
+                MeetupExperience = meetupExperience
+            };
+
+            var response = await Http.PostAsJsonAsync("api/reviews", reviewDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Review submitted successfully!", Severity.Success);
+                Logger.LogInformation("Review submitted successfully for loan {loanId}", LoanId);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Failed to submit review: {response.StatusCode} - {error}";
+                Logger.LogWarning("Failed to submit review: {statusCode} - {error}", response.StatusCode, error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error submitting review for loan {loanId}", LoanId);
+            errorMessage = "An error occurred while submitting your review. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public class CreateReviewDto
+    {
+        public int ReviewerId { get; set; }
+        public int LoanId { get; set; }
+        public int Rating { get; set; }
+        public string? Comment { get; set; }
+        public bool ConditionAsDescribed { get; set; }
+        public bool CommunicationGood { get; set; }
+        public bool MeetupExperience { get; set; }
+    }
+}

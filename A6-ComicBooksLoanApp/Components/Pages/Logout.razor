@@ -1,0 +1,51 @@
+@page "/logout"
+@using MudBlazor
+@using Blazored.LocalStorage
+@using A6_ComicBooksLoanApp.Services
+@inject ILocalStorageService LocalStorage
+@inject AuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Logout - Comic Exchange</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6">
+                <MudText Typo="Typo.h4" GutterBottom="true" Align="Align.Center">
+                    Logging Out...
+                </MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-6">
+                    Please wait while we log you out.
+                </MudText>
+
+                <MudProgressLinear Indeterminate="true" Class="mb-4" />
+
+                <MudText Typo="Typo.caption" Align="Align.Center" Class="text-muted">
+                    You will be redirected to the home page shortly.
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Clear authentication data from localStorage
+        await LocalStorage.RemoveItemAsync("currentUserId");
+        await LocalStorage.RemoveItemAsync("currentUsername");
+        await LocalStorage.RemoveItemAsync("currentEmail");
+        await LocalStorage.RemoveItemAsync("currentFullName");
+        await LocalStorage.RemoveItemAsync("isAuthenticated");
+        
+        // Notify AuthStateProvider to update UI components
+        AuthState.NotifyLogout();
+        
+        // Wait a moment before redirecting
+        await Task.Delay(1500);
+        
+        // Redirect to home
+        Navigation.NavigateTo("/");
+    }
+}

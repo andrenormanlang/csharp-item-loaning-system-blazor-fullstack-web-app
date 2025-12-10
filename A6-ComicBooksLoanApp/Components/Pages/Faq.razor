@@ -1,0 +1,151 @@
+@page "/faq"
+@using MudBlazor
+
+<PageTitle>FAQ - Comic Books Exchange</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-6" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <MudText Typo="Typo.h3" GutterBottom="true" Class="font-weight-bold">
+                    Frequently Asked Questions
+                </MudText>
+                <MudText Typo="Typo.subtitle1">
+                    Find answers to common questions about Comic Books Exchange
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudExpansionPanels>
+                <MudExpansionPanel Text="How do I create an account?" Icon="@Icons.Material.Filled.Help">
+                    <p>Click the 'Sign Up' button in the top navigation and fill out the registration form with your username, email, and password. Then set up your collector profile with your reading interests, preferred eras, and favorite characters.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Is there a fee to use the platform?" Icon="@Icons.Material.Filled.Help">
+                    <p>Comic Books Exchange is completely free to use. We don't charge listing fees, loan fees, or subscription costs. We believe sharing comics should be accessible to all collectors.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How does the loan system work?" Icon="@Icons.Material.Filled.Help">
+                    <p>Our platform operates as a one-way lending system. You can lend your comics to other members or borrow comics from their collections. Simply browse available comics, request a loan, and the owner will review your request. Once accepted, you'll coordinate shipping and enjoy reading the comic for the agreed loan period.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I add comics to my library?" Icon="@Icons.Material.Filled.Help">
+                    <p>Go to 'My Library' from the Comics menu and click 'Add Comic'. Fill in the details about your comic including title, issue number, publisher, era, condition, and any special notes. You can choose whether to make it available for lending. Your comics will appear in your library and be visible to other members if marked as available.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I see my own comics when browsing?" Icon="@Icons.Material.Filled.Help">
+                    <p>No, when you browse available comics, your own collection is automatically filtered out. This ensures you only see comics from other members that you can actually request to borrow.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What information do I see about available comics?" Icon="@Icons.Material.Filled.Help">
+                    <p>For each comic, you can see the title, issue number, publisher, era, condition grade, and current availability status. You'll also see if it's currently on loan and when it will be available. Detailed views show publication date, characters, genre, and owner's notes about the comic.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I request to borrow a comic?" Icon="@Icons.Material.Filled.Help">
+                    <p>Browse the available comics, click on a comic you're interested in, and select 'Request Loan'. You'll specify your desired loan duration and can include a message to the owner. The owner will review your request and decide whether to approve it.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How long can I borrow a comic for?" Icon="@Icons.Material.Filled.Help">
+                    <p>Loan durations are agreed upon between the lender and borrower when the loan request is made. Typical loan periods range from 7 to 30 days. Make sure to return the comic by the agreed due date to maintain your good standing in the community.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What happens if I return a comic late?" Icon="@Icons.Material.Filled.Help">
+                    <p>Late returns are tracked in your loan history and can affect your rating. The system shows loans as 'Overdue' if not returned by the due date. Repeated late returns may impact your ability to borrow from other members. Always communicate with the lender if you need an extension.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What should I charge for shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Shipping costs should be agreed upon between lender and borrower before finalizing the loan. We recommend using USPS, UPS, or FedEx with tracking and insurance. Since comics must be shipped both ways (to the borrower and back to the lender), factor in both shipping costs when discussing arrangements.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How should I package comics for shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Use acid-free comic bags and boards to protect the comic. Wrap securely in bubble wrap and place in a sturdy, well-padded box or mailer. Always use tracking and consider insurance for valuable comics. Mark packages as 'Fragile' and 'Do Not Bend'. Take photos before shipping for documentation.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What does the loan tracking system show?" Icon="@Icons.Material.Filled.Help">
+                    <p>The loan tracking shows several stages: Agreement (loan accepted), Comics Shipped (sent to borrower), Comics Received (borrower confirms receipt), and Return Comics (returned to owner). Both parties can track the status throughout the loan period.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I know if a member is trustworthy?" Icon="@Icons.Material.Filled.Help">
+                    <p>Check their profile rating (0-5 stars), successful loans count, and member since date. Verified members (marked with a green checkmark) have additional verification. You can also view their loan history and read their biography. Start with shorter loan periods if you're unsure about a new member.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What does 'professionally graded' mean?" Icon="@Icons.Material.Filled.Help">
+                    <p>Professional grading means a third-party company like CGC or CBCS has evaluated the comic's condition on a standardized scale (1-10) and sealed it in a protective case. Professionally graded comics are typically more valuable and offer verified condition assessment. This information helps borrowers understand what they're requesting.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I filter comics by era, publisher, or condition?" Icon="@Icons.Material.Filled.Help">
+                    <p>Yes! The browse page includes comprehensive filters for Era (Golden Age, Silver Age, Bronze Age, Copper Age, Modern Age), Publisher (Marvel, DC, Image, Dark Horse, etc.), and Condition Grade (Mint, Near Mint, Very Fine, Fine, etc.). You can also search by comic title.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if I'm not satisfied with the borrowed comic's condition?" Icon="@Icons.Material.Filled.Help">
+                    <p>If the comic's condition doesn't match the description, message the lender immediately before proceeding with the loan. Take photos for documentation. If issues can't be resolved, you can decline to complete the loan and return the comic. Contact support if needed.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I lend locally instead of shipping?" Icon="@Icons.Material.Filled.Help">
+                    <p>Yes! You can arrange local meetups with members in your area. This saves on shipping costs and allows you to inspect comics in person. Always meet in safe, public locations like libraries or comic shops. Update the loan status manually once the exchange is complete.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if a package gets lost?" Icon="@Icons.Material.Filled.Help">
+                    <p>This is why we strongly recommend tracked shipping with insurance for all loans. If a package is lost, file a claim with the shipping company immediately. Insurance should cover the comic's value. Both parties should communicate regularly and work together to resolve shipping issues.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I report a problem user?" Icon="@Icons.Material.Filled.Help">
+                    <p>Use the 'Report' button on their profile or contact our support team at support@comicbooksloan.com. Include details about the issue, relevant loan IDs, and any evidence of problematic behavior. We take community safety and trust seriously.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I edit or remove my comics?" Icon="@Icons.Material.Filled.Help">
+                    <p>Yes, you can edit comic details anytime from 'My Library'. You can mark comics as unavailable or remove them from your collection. However, you cannot remove comics that are currently on loan. Update availability status to prevent new loan requests while keeping a comic in your library.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Where can I view my loan history?" Icon="@Icons.Material.Filled.Help">
+                    <p>Go to 'Loan History' in the Loans menu to see all your completed, returned, and cancelled loans. The history is organized into tabs: 'All History', 'As Borrower' (comics you borrowed), and 'As Lender' (comics you lent out). Statistics show your total loans, completed count, and any overdue items.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do loan requests work?" Icon="@Icons.Material.Filled.Help">
+                    <p>When you request a loan, the comic owner receives a notification. They can view your request details including your desired loan duration and message. They can accept or decline the request. If accepted, the loan moves to 'Active Loans' and both parties coordinate shipping.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Is my personal information private?" Icon="@Icons.Material.Filled.Help">
+                    <p>Your email and password are never shared publicly. Other members can see your username, full name (if provided), location (if shared), reading interests, and public profile information. You control what details to include in your biography and profile. Loan history only shows usernames, not addresses or contact information.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What grades are acceptable for lending?" Icon="@Icons.Material.Filled.Help">
+                    <p>All condition grades are acceptable for lending! From Mint to Poor condition - comics of all grades are valuable to different collectors. Be honest and accurate about condition in your listings. Clear condition descriptions build trust and help borrowers know what to expect.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="Can I lend variant covers or signed comics?" Icon="@Icons.Material.Filled.Help">
+                    <p>Absolutely! Variant covers, signed comics, first editions, and special editions can all be lent. Make sure to clearly note these special attributes in your comic's description and owner notes. Consider shorter loan periods or local-only arrangements for especially valuable items.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I become a verified member?" Icon="@Icons.Material.Filled.Help">
+                    <p>Verified members (shown with a green checkmark) have completed additional verification through our team and maintain a positive lending history. Complete successful loans, maintain good ratings, and follow community guidelines. Contact support to inquire about verification once you have established lending history.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What if I need to cancel a loan after it's accepted?" Icon="@Icons.Material.Filled.Help">
+                    <p>Contact the other member immediately to discuss cancellation. If comics haven't been shipped yet, cancellation is simpler. Once comics are in transit, cancellation becomes more complicated. Repeated cancellations can negatively affect your rating and account standing. Always communicate early if issues arise.</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="How do I find members to connect with?" Icon="@Icons.Material.Filled.Help">
+                    <p>Visit the 'Community' section under the Community menu to browse all members. You can filter by reading interests, minimum rating, and verified status. Each profile shows their preferred eras, successful loans count, member since date, and biography. Connect with members who share your comic interests!</p>
+                </MudExpansionPanel>
+
+                <MudExpansionPanel Text="What eras and publishers are supported?" Icon="@Icons.Material.Filled.Help">
+                    <p>We support comics from all major eras: Golden Age (1938-1956), Silver Age (1956-1970), Bronze Age (1970-1985), Copper Age (1985-1992), and Modern Age (1992-present). Publishers include Marvel, DC, Image Comics, Dark Horse, IDW, Vertigo, and many independent publishers. Our database covers the full spectrum of comic book history!</p>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </MudItem>
+
+        <MudItem xs="12" Class="mt-6">
+            <MudPaper Elevation="2" Class="pa-6" Style="background: #f5f5f5;">
+                <MudText Typo="Typo.h5" GutterBottom="true">Still Have Questions?</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    If you can't find the answer you're looking for, please don't hesitate to contact our support team. We're here to help make your comic lending experience great!
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="mailto:support@comicbooksloan.com" StartIcon="@Icons.Material.Filled.Email">
+                    Contact Support
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

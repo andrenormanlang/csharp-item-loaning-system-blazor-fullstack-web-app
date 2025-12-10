@@ -1,0 +1,201 @@
+﻿@using Blazored.LocalStorage
+@using A6_ComicBooksLoanApp.Services
+@inject ILocalStorageService LocalStorage
+@inject AuthStateProvider AuthState
+@inject HttpClient Http
+@implements IDisposable
+
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+
+    <!-- Authentication Links -->
+    @if (isAuthenticated)
+    {
+        <MudDivider Class="my-2" />
+        <MudText Typo="Typo.caption" Class="px-4 py-2">
+            Welcome, <strong>@currentUsername</strong>
+        </MudText>
+        <MudNavLink Href="profile" Icon="@Icons.Material.Filled.Person">My Profile</MudNavLink>
+        <MudNavLink Href="messages" Icon="@Icons.Material.Filled.Mail">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Messages</span>
+                @if (unreadMessagesCount > 0)
+                {
+                    <MudBadge Content="@unreadMessagesCount" Color="Color.Error" Overlap="false" />
+                }
+            </div>
+        </MudNavLink>
+        <MudNavLink Href="logout" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
+        <MudDivider Class="my-2" />
+    }
+    else
+    {
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="login" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+        <MudNavLink Href="register" Icon="@Icons.Material.Filled.PersonAdd">Register</MudNavLink>
+        <MudDivider Class="my-2" />
+    }
+
+    <MudNavGroup Title="Comics" Icon="@Icons.Material.Filled.MenuBook" Expanded="false">
+        <MudNavLink Href="comics" Icon="@Icons.Material.Filled.Search">Browse Comics</MudNavLink>
+        <MudNavLink Href="list-comic" Icon="@Icons.Material.Filled.Add">Add Comic</MudNavLink>
+        <MudNavLink Href="my-collection" Icon="@Icons.Material.Filled.LibraryBooks">My Library</MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Loans" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
+        <MudNavLink Href="loans" Icon="@Icons.Material.Filled.SwapHoriz">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>My Loans</span>
+                @if (isAuthenticated && pendingLoanRequestsCount > 0)
+                {
+                    <MudBadge Content="@pendingLoanRequestsCount" Color="Color.Warning" Overlap="false" />
+                }
+            </div>
+        </MudNavLink>
+        <MudNavLink Href="loan-history" Icon="@Icons.Material.Filled.History">Loan History</MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Community" Icon="@Icons.Material.Filled.Groups" Expanded="false">
+        <MudNavLink Href="community" Icon="@Icons.Material.Filled.People">Find Members</MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Info" Expanded="false">
+        <MudNavLink Href="about" Icon="@Icons.Material.Filled.HelpCenter">About Us</MudNavLink>
+        <MudNavLink Href="guide" Icon="@Icons.Material.Filled.MenuBook">How It Works</MudNavLink>
+        <MudNavLink Href="faq" Icon="@Icons.Material.Filled.QuestionAnswer">FAQ</MudNavLink>
+    </MudNavGroup>
+
+</MudNavMenu>
+
+@code {
+    private bool isAuthenticated = false;
+    private string currentUsername = "";
+    private int currentUserId = 0;
+    private int unreadMessagesCount = 0;
+    private int pendingLoanRequestsCount = 0;
+    private System.Threading.Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to auth state changes
+        AuthState.OnAuthStateChanged += OnAuthStateChanged;
+
+        // Check if user is authenticated by reading from localStorage
+        await LoadAuthState();
+        
+        // Start polling for counts if authenticated
+        if (isAuthenticated)
+        {
+            await LoadCounts();
+            StartCountPolling();
+        }
+    }
+
+    private async Task LoadAuthState()
+    {
+        try
+        {
+            var authState = await LocalStorage.GetItemAsync<bool>("isAuthenticated");
+            if (authState)
+            {
+                isAuthenticated = true;
+                var username = await LocalStorage.GetItemAsync<string>("currentUsername");
+                currentUsername = username ?? "User";
+                currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+
+                // Sync with AuthStateProvider
+                AuthState.SetInitialState(true, currentUserId, currentUsername);
+            }
+            else
+            {
+                isAuthenticated = false;
+                AuthState.SetInitialState(false);
+            }
+        }
+        catch
+        {
+            isAuthenticated = false;
+            AuthState.SetInitialState(false);
+        }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        isAuthenticated = AuthState.IsAuthenticated;
+        currentUsername = AuthState.CurrentUsername;
+        currentUserId = AuthState.CurrentUserId;
+        
+        if (isAuthenticated && currentUserId > 0)
+        {
+            _ = LoadCounts();
+            StartCountPolling();
+        }
+        else
+        {
+            StopCountPolling();
+            unreadMessagesCount = 0;
+            pendingLoanRequestsCount = 0;
+        }
+        
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadCounts()
+    {
+        if (currentUserId <= 0) return;
+        
+        await Task.WhenAll(
+            LoadUnreadMessagesCount(),
+            LoadPendingLoanRequestsCount()
+        );
+    }
+
+    private async Task LoadUnreadMessagesCount()
+    {
+        try
+        {
+            unreadMessagesCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{currentUserId}");
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // Silently fail - not critical
+            unreadMessagesCount = 0;
+        }
+    }
+
+    private async Task LoadPendingLoanRequestsCount()
+    {
+        try
+        {
+            pendingLoanRequestsCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/loans/requests/pending-count/{currentUserId}");
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // Silently fail - not critical
+            pendingLoanRequestsCount = 0;
+        }
+    }
+
+    private void StartCountPolling()
+    {
+        // Poll every 30 seconds
+        _timer = new System.Threading.Timer(async _ =>
+        {
+            await LoadCounts();
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private void StopCountPolling()
+    {
+        _timer?.Dispose();
+        _timer = null;
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnAuthStateChanged -= OnAuthStateChanged;
+        StopCountPolling();
+    }
+}
