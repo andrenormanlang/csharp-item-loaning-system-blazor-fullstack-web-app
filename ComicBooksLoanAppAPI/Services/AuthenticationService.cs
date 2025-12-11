@@ -60,6 +60,8 @@ namespace ComicBooksLoanAppAPI.Services
                     PasswordHash = HashPassword(password),
                     MemberSince = DateTime.UtcNow,
                     IsVerified = false,
+                    ApprovalStatus = ApprovalStatus.Pending,
+                    Role = "User",
                     Description = "Comic enthusiast",
                     AverageRating = 0,
                     SuccessfulLoans = 0

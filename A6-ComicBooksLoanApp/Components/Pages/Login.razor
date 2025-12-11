@@ -115,10 +115,11 @@
                 await LocalStorage.SetItemAsync("currentUsername", user.Username);
                 await LocalStorage.SetItemAsync("currentEmail", user.Email);
                 await LocalStorage.SetItemAsync("currentFullName", user.FullName);
+                await LocalStorage.SetItemAsync("currentRole", user.Role);
                 await LocalStorage.SetItemAsync("isAuthenticated", true);
 
                 // Notify AuthStateProvider to update UI components
-                AuthState.NotifyLogin(user.Id, user.Username);
+                AuthState.NotifyLogin(user.Id, user.Username, user.Role);
 
                 // Wait briefly to show success message
                 await Task.Delay(1500);

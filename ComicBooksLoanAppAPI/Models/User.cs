@@ -113,5 +113,17 @@ namespace ComicBooksLoanAppAPI.Models
         /// Gets or sets the navigation property for reviews received by this user.
         /// </summary>
         public virtual ICollection<Review> ReviewsReceived { get; set; } = new List<Review>();
+
+        /// <summary>
+        /// Gets or sets the moderation approval status for this user.
+        /// Users must be approved before being rendered publicly.
+        /// </summary>
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
+
+        /// <summary>
+        /// Gets or sets the role of the user (e.g., "User", "Admin").
+        /// Admins are moderators and do not add comics.
+        /// </summary>
+        public string Role { get; set; } = "User";
     }
 }

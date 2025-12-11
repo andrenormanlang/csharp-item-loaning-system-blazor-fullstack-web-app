@@ -36,7 +36,7 @@ namespace ComicBooksLoanAppAPI.Models
         /// </summary>
         public string Characters { get; set; } = string.Empty;
 
-       
+
         public string Era { get; set; } = string.Empty;
 
         /// <summary>
@@ -103,5 +103,11 @@ namespace ComicBooksLoanAppAPI.Models
         /// Gets or sets the URL to the comic book cover image.
         /// </summary>
         public string? CoverImageUrl { get; set; } = "/images/comics/default-cover.svg";
+
+        /// <summary>
+        /// Gets or sets the moderation approval status for this comic.
+        /// Comics must be approved before they are visible.
+        /// </summary>
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
     }
 }

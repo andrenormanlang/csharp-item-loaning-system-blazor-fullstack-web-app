@@ -29,6 +29,7 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddScoped<ComicApiService>();
 builder.Services.AddScoped<UserApiService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AdminApiService>();
 
 // Register AuthStateProvider as a singleton to share auth state across components
 builder.Services.AddSingleton<AuthStateProvider>();

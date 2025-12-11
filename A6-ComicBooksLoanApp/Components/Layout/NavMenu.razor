@@ -6,7 +6,7 @@
 @implements IDisposable
 
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
 
     <!-- Authentication Links -->
     @if (isAuthenticated)
@@ -16,17 +16,50 @@
             Welcome, <strong>@currentUsername</strong>
         </MudText>
         <MudNavLink Href="profile" Icon="@Icons.Material.Filled.Person">My Profile</MudNavLink>
-        <MudNavLink Href="messages" Icon="@Icons.Material.Filled.Mail">
+        <MudNavLink Href="messages" Icon="@Icons.Material.Filled.Message">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span>Messages</span>
                 @if (unreadMessagesCount > 0)
                 {
-                    <MudBadge Content="@unreadMessagesCount" Color="Color.Error" Overlap="false" />
+                    <MudBadge Content="@unreadMessagesCount" Color="Color.Secondary" Overlap="false" />
                 }
             </div>
         </MudNavLink>
         <MudNavLink Href="logout" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
-        <MudDivider Class="my-2" />
+
+        @if (IsAdmin)
+        {
+            <MudDivider Class="my-2" />
+            <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
+                <MudNavLink Href="admin/moderation" Icon="@Icons.Material.Filled.Dashboard">Moderation Dashboard</MudNavLink>
+            </MudNavGroup>
+        }
+        else if (IsUser)
+        {
+            <MudDivider Class="my-2" />
+            <MudNavGroup Title="Comics" Icon="@Icons.Material.Filled.MenuBook" Expanded="false">
+                <MudNavLink Href="comics" Icon="@Icons.Material.Filled.Search">Browse Comics</MudNavLink>
+                <MudNavLink Href="list-comic" Icon="@Icons.Material.Filled.Add">Add Comic</MudNavLink>
+                <MudNavLink Href="my-collection" Icon="@Icons.Material.Filled.LibraryBooks">My Library</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Loans" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
+                <MudNavLink Href="loans" Icon="@Icons.Material.Filled.SwapHoriz">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>My Loans</span>
+                        @if (pendingLoanRequestsCount > 0)
+                        {
+                            <MudBadge Content="@pendingLoanRequestsCount" Color="Color.Warning" Overlap="false" />
+                        }
+                    </div>
+                </MudNavLink>
+                <MudNavLink Href="loan-history" Icon="@Icons.Material.Filled.History">Loan History</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Community" Icon="@Icons.Material.Filled.Groups" Expanded="false">
+                <MudNavLink Href="community" Icon="@Icons.Material.Filled.People">Find Members</MudNavLink>
+            </MudNavGroup>
+        }
     }
     else
     {
@@ -35,29 +68,6 @@
         <MudNavLink Href="register" Icon="@Icons.Material.Filled.PersonAdd">Register</MudNavLink>
         <MudDivider Class="my-2" />
     }
-
-    <MudNavGroup Title="Comics" Icon="@Icons.Material.Filled.MenuBook" Expanded="false">
-        <MudNavLink Href="comics" Icon="@Icons.Material.Filled.Search">Browse Comics</MudNavLink>
-        <MudNavLink Href="list-comic" Icon="@Icons.Material.Filled.Add">Add Comic</MudNavLink>
-        <MudNavLink Href="my-collection" Icon="@Icons.Material.Filled.LibraryBooks">My Library</MudNavLink>
-    </MudNavGroup>
-
-    <MudNavGroup Title="Loans" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
-        <MudNavLink Href="loans" Icon="@Icons.Material.Filled.SwapHoriz">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span>My Loans</span>
-                @if (isAuthenticated && pendingLoanRequestsCount > 0)
-                {
-                    <MudBadge Content="@pendingLoanRequestsCount" Color="Color.Warning" Overlap="false" />
-                }
-            </div>
-        </MudNavLink>
-        <MudNavLink Href="loan-history" Icon="@Icons.Material.Filled.History">Loan History</MudNavLink>
-    </MudNavGroup>
-
-    <MudNavGroup Title="Community" Icon="@Icons.Material.Filled.Groups" Expanded="false">
-        <MudNavLink Href="community" Icon="@Icons.Material.Filled.People">Find Members</MudNavLink>
-    </MudNavGroup>
 
     <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Info" Expanded="false">
         <MudNavLink Href="about" Icon="@Icons.Material.Filled.HelpCenter">About Us</MudNavLink>
@@ -70,10 +80,14 @@
 @code {
     private bool isAuthenticated = false;
     private string currentUsername = "";
+    private string currentRole = "";
     private int currentUserId = 0;
     private int unreadMessagesCount = 0;
     private int pendingLoanRequestsCount = 0;
     private System.Threading.Timer? _timer;
+
+    private bool IsAdmin => currentRole == "Admin";
+    private bool IsUser => currentRole == "User";
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,9 +116,11 @@
                 var username = await LocalStorage.GetItemAsync<string>("currentUsername");
                 currentUsername = username ?? "User";
                 currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+                var role = await LocalStorage.GetItemAsync<string>("currentRole");
+                currentRole = role ?? "User";
 
                 // Sync with AuthStateProvider
-                AuthState.SetInitialState(true, currentUserId, currentUsername);
+                AuthState.SetInitialState(true, currentUserId, currentUsername, currentRole);
             }
             else
             {
@@ -124,6 +140,7 @@
         isAuthenticated = AuthState.IsAuthenticated;
         currentUsername = AuthState.CurrentUsername;
         currentUserId = AuthState.CurrentUserId;
+        currentRole = AuthState.CurrentRole;
         
         if (isAuthenticated && currentUserId > 0)
         {

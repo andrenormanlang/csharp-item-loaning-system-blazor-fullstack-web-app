@@ -28,8 +28,10 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetAvailableAsync()
         {
             return await _context.Comics
-                // TODO: Re-enable after implementing authorization
-                // .Where(c => c.IsAvailable)
+                .Where(c => c.IsAvailable
+                    && c.ApprovalStatus == ApprovalStatus.Approved
+                    && c.Owner != null
+                    && c.Owner.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderByDescending(c => c.DateListed)
                 .ToListAsync();
@@ -43,7 +45,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByOwnerIdAsync(int ownerId)
         {
             return await _context.Comics
-                .Where(c => c.OwnerId == ownerId)
+                .Where(c => c.OwnerId == ownerId && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -57,7 +59,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByEraAsync(string era)
         {
             return await _context.Comics
-                .Where(c => c.Era == era && c.IsAvailable)
+                .Where(c => c.Era == era && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -71,7 +73,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByConditionGradeAsync(string grade)
         {
             return await _context.Comics
-                .Where(c => c.ConditionGrade == grade && c.IsAvailable)
+                .Where(c => c.ConditionGrade == grade && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -84,7 +86,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetPopularEraComicsAsync()
         {
             return await _context.Comics
-                .Where(c => (c.Era == "Bronze Age" || c.Era == "Copper Age") && c.IsAvailable)
+                .Where(c => (c.Era == "Bronze Age" || c.Era == "Copper Age") && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -98,7 +100,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByGenreAsync(string genre)
         {
             return await _context.Comics
-                .Where(c => c.Genre.Contains(genre) && c.IsAvailable)
+                .Where(c => c.Genre.Contains(genre) && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -112,7 +114,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> SearchByTitleAsync(string searchTerm)
         {
             return await _context.Comics
-                .Where(c => c.Title.Contains(searchTerm) && c.IsAvailable)
+                .Where(c => c.Title.Contains(searchTerm) && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -126,7 +128,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByPublisherAsync(string publisher)
         {
             return await _context.Comics
-                .Where(c => c.Publisher == publisher && c.IsAvailable)
+                .Where(c => c.Publisher == publisher && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
@@ -140,7 +142,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<Comic>> GetByCharacterAsync(string character)
         {
             return await _context.Comics
-                .Where(c => c.Characters.Contains(character) && c.IsAvailable)
+                .Where(c => c.Characters.Contains(character) && c.IsAvailable && c.ApprovalStatus == ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderBy(c => c.Title)
                 .ToListAsync();

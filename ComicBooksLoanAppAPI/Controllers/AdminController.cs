@@ -77,5 +77,85 @@ namespace ComicBooksLoanAppAPI.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving stats." });
             }
         }
+
+        /// <summary>
+        /// Lists users pending approval.
+        /// </summary>
+        [HttpGet("pending-users")]
+        public async Task<IActionResult> GetPendingUsers()
+        {
+            var users = await _context.Users
+                .Where(u => u.ApprovalStatus == Models.ApprovalStatus.Pending)
+                .OrderBy(u => u.MemberSince)
+                .ToListAsync();
+            return Ok(users);
+        }
+
+        /// <summary>
+        /// Approves a user registration.
+        /// </summary>
+        [HttpPost("users/{id}/approve")]
+        public async Task<IActionResult> ApproveUser([FromRoute] int id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null) return NotFound();
+            user.ApprovalStatus = Models.ApprovalStatus.Approved;
+            user.IsVerified = true;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User approved." });
+        }
+
+        /// <summary>
+        /// Rejects a user registration.
+        /// </summary>
+        [HttpPost("users/{id}/reject")]
+        public async Task<IActionResult> RejectUser([FromRoute] int id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null) return NotFound();
+            user.ApprovalStatus = Models.ApprovalStatus.Rejected;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User rejected." });
+        }
+
+        /// <summary>
+        /// Lists comics pending approval.
+        /// </summary>
+        [HttpGet("pending-comics")]
+        public async Task<IActionResult> GetPendingComics()
+        {
+            var comics = await _context.Comics
+                .Where(c => c.ApprovalStatus == Models.ApprovalStatus.Pending)
+                .Include(c => c.Owner)
+                .OrderByDescending(c => c.DateListed)
+                .ToListAsync();
+            return Ok(comics);
+        }
+
+        /// <summary>
+        /// Approves a comic submission.
+        /// </summary>
+        [HttpPost("comics/{id}/approve")]
+        public async Task<IActionResult> ApproveComic([FromRoute] int id)
+        {
+            var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id);
+            if (comic == null) return NotFound();
+            comic.ApprovalStatus = Models.ApprovalStatus.Approved;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Comic approved." });
+        }
+
+        /// <summary>
+        /// Rejects a comic submission.
+        /// </summary>
+        [HttpPost("comics/{id}/reject")]
+        public async Task<IActionResult> RejectComic([FromRoute] int id)
+        {
+            var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id);
+            if (comic == null) return NotFound();
+            comic.ApprovalStatus = Models.ApprovalStatus.Rejected;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Comic rejected." });
+        }
     }
 }

@@ -73,7 +73,9 @@ namespace ComicBooksLoanAppAPI.Controllers
                         username = user?.Username,
                         email = user?.Email,
                         fullName = user?.FullName,
-                        imageUrl = user?.ImageUrl
+                        imageUrl = user?.ImageUrl,
+                        role = user?.Role,
+                        approvalStatus = user?.ApprovalStatus.ToString()
                     }
                 });
             }

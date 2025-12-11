@@ -27,13 +27,19 @@ namespace A6_ComicBooksLoanApp.Services
         public int CurrentUserId { get; private set; }
 
         /// <summary>
+        /// Gets the current user role if authenticated.
+        /// </summary>
+        public string CurrentRole { get; private set; } = string.Empty;
+
+        /// <summary>
         /// Notifies subscribers that the user has logged in.
         /// </summary>
-        public void NotifyLogin(int userId, string username)
+        public void NotifyLogin(int userId, string username, string role = "")
         {
             IsAuthenticated = true;
             CurrentUserId = userId;
             CurrentUsername = username;
+            CurrentRole = role;
             OnAuthStateChanged?.Invoke();
         }
 
@@ -45,17 +51,19 @@ namespace A6_ComicBooksLoanApp.Services
             IsAuthenticated = false;
             CurrentUserId = 0;
             CurrentUsername = string.Empty;
+            CurrentRole = string.Empty;
             OnAuthStateChanged?.Invoke();
         }
 
         /// <summary>
         /// Sets the initial auth state (called during app initialization).
         /// </summary>
-        public void SetInitialState(bool isAuthenticated, int userId = 0, string username = "")
+        public void SetInitialState(bool isAuthenticated, int userId = 0, string username = "", string role = "")
         {
             IsAuthenticated = isAuthenticated;
             CurrentUserId = userId;
             CurrentUsername = username;
+            CurrentRole = role;
             // Don't trigger event for initial state - components will read directly
         }
     }

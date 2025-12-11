@@ -81,6 +81,10 @@ namespace ComicBooksLoanAppAPI.Data
                 entity.Property(e => e.FavoriteCharacters).HasMaxLength(500);
                 entity.Property(e => e.AverageRating).HasPrecision(5, 2);
                 entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.ApprovalStatus)
+                    .HasConversion<int>()
+                    .IsRequired();
                 entity.HasIndex(e => e.Username).IsUnique();
                 entity.HasIndex(e => e.Email).IsUnique();
             });
@@ -96,6 +100,9 @@ namespace ComicBooksLoanAppAPI.Data
                 entity.Property(e => e.Era).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Genre).HasMaxLength(100);
                 entity.Property(e => e.CoverImageUrl).HasMaxLength(500);
+                entity.Property(e => e.ApprovalStatus)
+                    .HasConversion<int>()
+                    .IsRequired();
                 entity.HasOne(e => e.Owner)
                     .WithMany(u => u.Comics)
                     .HasForeignKey(e => e.OwnerId)

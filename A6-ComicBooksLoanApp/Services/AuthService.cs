@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Linq;
 
 namespace A6_ComicBooksLoanApp.Services
 {
@@ -75,22 +76,55 @@ namespace A6_ComicBooksLoanApp.Services
                     var jsonDoc = JsonDocument.Parse(jsonContent);
                     var root = jsonDoc.RootElement;
 
-                    if (root.TryGetProperty("user", out var userElement))
+                    // If API uses a DTO with success flag
+                    if (root.TryGetProperty("success", out var successEl) && successEl.ValueKind == JsonValueKind.False)
                     {
-                        var userData = new UserData
-                        {
-                            Id = userElement.GetProperty("id").GetInt32(),
-                            Username = userElement.GetProperty("username").GetString() ?? "",
-                            Email = userElement.GetProperty("email").GetString() ?? "",
-                            FullName = userElement.GetProperty("fullName").GetString() ?? "",
-                            ImageUrl = userElement.GetProperty("imageUrl").GetString() ?? ""
-                        };
-                        return (true, userData, "Login successful");
+                        var msg = root.TryGetProperty("message", out var msgEl) && msgEl.ValueKind == JsonValueKind.String ? msgEl.GetString() : "Login failed";
+                        _logger.LogWarning("Login unsuccessful: {Message}", msg);
+                        return (false, null, msg);
                     }
-                    else
-                    {
-                        return (false, null, "Invalid response from server");
-                    }
+
+                    // Extract user and role safely
+                    JsonElement userEl = root;
+                    if (root.TryGetProperty("user", out var uEl) && uEl.ValueKind == JsonValueKind.Object)
+                        userEl = uEl;
+
+                    int id = 0;
+                    if (userEl.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.Number)
+                        id = idEl.GetInt32();
+
+                    string? username = null;
+                    if (userEl.TryGetProperty("username", out var unEl) && unEl.ValueKind == JsonValueKind.String)
+                        username = unEl.GetString();
+
+                    string? email_ret = null;
+                    if (userEl.TryGetProperty("email", out var emailEl) && emailEl.ValueKind == JsonValueKind.String)
+                        email_ret = emailEl.GetString();
+
+                    string? fullName = null;
+                    if (userEl.TryGetProperty("fullName", out var fnEl) && fnEl.ValueKind == JsonValueKind.String)
+                        fullName = fnEl.GetString();
+
+                    string? imageUrl = null;
+                    if (userEl.TryGetProperty("imageUrl", out var imgEl) && imgEl.ValueKind == JsonValueKind.String)
+                        imageUrl = imgEl.GetString();
+
+                    string? role = null;
+                    if (userEl.TryGetProperty("role", out var roleEl) && roleEl.ValueKind == JsonValueKind.String)
+                        role = roleEl.GetString();
+
+                    _logger.LogInformation("User logged in. Id: {Id}, Username: {Username}, Role: {Role}",
+                        id, username ?? "unknown", role ?? "unknown");
+
+                    return (true, new UserData 
+                    { 
+                        Id = id,
+                        Username = username ?? "",
+                        Email = email_ret ?? "",
+                        FullName = fullName ?? "",
+                        ImageUrl = imageUrl ?? "",
+                        Role = role ?? ""
+                    }, "Login successful");
                 }
                 else
                 {
@@ -114,5 +148,6 @@ namespace A6_ComicBooksLoanApp.Services
         public string Email { get; set; } = "";
         public string FullName { get; set; } = "";
         public string ImageUrl { get; set; } = "";
+        public string Role { get; set; } = "";
     }
 }

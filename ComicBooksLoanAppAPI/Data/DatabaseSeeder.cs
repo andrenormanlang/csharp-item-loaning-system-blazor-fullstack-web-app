@@ -63,7 +63,7 @@ namespace ComicBooksLoanAppAPI.Data
 
         private static List<User> GetSampleUsers()
         {
-            return new List<User>
+            var list = new List<User>
             {
                 new User
                 {
@@ -180,11 +180,43 @@ namespace ComicBooksLoanAppAPI.Data
                     PasswordHash = HashPassword("Comics123!")
                 }
             };
+
+            // Set approval defaults for seeded users
+            foreach (var u in list)
+            {
+                u.ApprovalStatus = ApprovalStatus.Approved;
+                u.Role = "User";
+            }
+
+            // Seed an admin moderator account
+            list.Add(new User
+            {
+                Id = 1000,
+                Username = "admin",
+                FullName = "Admin Moderator",
+                Email = "admin@example.com",
+                City = "Malmö",
+                ZipCode = "211 20",
+                ReadingFocus = "Moderation",
+                Description = "Administrator account for approving users and comics",
+                FavoriteCharacters = "",
+                Biography = "",
+                SuccessfulLoans = 0,
+                AverageRating = 0m,
+                MemberSince = new DateTime(2023, 1, 1),
+                IsVerified = true,
+                ImageUrl = null,
+                PasswordHash = HashPassword("Admin123!"),
+                ApprovalStatus = ApprovalStatus.Approved,
+                Role = "Admin"
+            });
+
+            return list;
         }
 
         private static List<Comic> GetSampleComics()
         {
-            return new List<Comic>
+            var list = new List<Comic>
             {
                 // ========================================
                 // BRONZE AGE MARVEL - Bob's Collection
@@ -780,6 +812,14 @@ namespace ComicBooksLoanAppAPI.Data
                     CoverImageUrl = "https://static.wikia.nocookie.net/marveldatabase/images/3/3e/Epic_Illustrated_Vol_1_1.jpg"
                 }
             };
+
+            // Set approval defaults for seeded comics
+            foreach (var c in list)
+            {
+                c.ApprovalStatus = ApprovalStatus.Approved;
+            }
+
+            return list;
         }
 
         private static List<Loan> GetPastLoans()
@@ -1607,10 +1647,10 @@ namespace ComicBooksLoanAppAPI.Data
             // Create reviews that match the AverageRating for each user
             // User 1 (Bob): 4.9, User 2 (Diana): 5.0, User 3 (Marcus): 4.8
             // User 4 (Daniel): 4.9, User 5 (Sarah): 4.7, User 6 (Henry): 4.8
-            
+
             // IMPORTANT: ReviewerId is who WROTE the review, ReviewedUserId is who is BEING reviewed
             // For completed loans display, we show the rating the CURRENT USER gave to the OTHER person
-            
+
             var reviews = new List<Review>();
             int reviewId = 1;
 
@@ -1620,7 +1660,7 @@ namespace ComicBooksLoanAppAPI.Data
             {
                 int reviewedUserId = (i % 5) + 2; // Users 2-6
                 int rating = i % 5 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1635,13 +1675,13 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(23 - i)).AddDays(14)
                 });
             }
-            
+
             // Reviews FOR User 1 (Bob) - Others reviewing Bob after lending from him
             for (int i = 0; i < 12; i++)
             {
                 int reviewerId = (i % 5) + 2; // Users 2-6 reviewing Bob
                 int rating = i % 5 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1661,7 +1701,7 @@ namespace ComicBooksLoanAppAPI.Data
             for (int i = 0; i < 9; i++)
             {
                 int reviewedUserId = (i % 4) + 3; // Users 3-6
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1676,12 +1716,12 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(19 - i)).AddDays(14)
                 });
             }
-            
+
             // Reviews FOR User 2 (Diana) - Others reviewing Diana
             for (int i = 0; i < 9; i++)
             {
                 int reviewerId = (i % 5) + 1 == 2 ? 6 : (i % 5) + 1;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1702,7 +1742,7 @@ namespace ComicBooksLoanAppAPI.Data
             {
                 int reviewedUserId = (i % 5) + 1 == 3 ? 6 : (i % 5) + 1;
                 int rating = i % 6 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1717,13 +1757,13 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(21 - (i / 2))).AddDays(14)
                 });
             }
-            
+
             // Reviews FOR User 3 (Marcus) - Others reviewing Marcus
             for (int i = 0; i < 21; i++)
             {
                 int reviewerId = (i % 5) + 1 == 3 ? 6 : (i % 5) + 1;
                 int rating = i % 6 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1744,7 +1784,7 @@ namespace ComicBooksLoanAppAPI.Data
             {
                 int reviewedUserId = (i % 5) + 1 == 4 ? 6 : (i % 5) + 1;
                 int rating = i % 10 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1759,13 +1799,13 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(17 - (i / 2))).AddDays(14)
                 });
             }
-            
+
             // Reviews FOR User 4 (Daniel) - Others reviewing Daniel
             for (int i = 0; i < 16; i++)
             {
                 int reviewerId = (i % 5) + 1 == 4 ? 6 : (i % 5) + 1;
                 int rating = i % 10 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1787,7 +1827,7 @@ namespace ComicBooksLoanAppAPI.Data
             {
                 int reviewedUserId = (i % 4) + 1;
                 int rating = i % 3 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1802,13 +1842,13 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(15 - i)).AddDays(14)
                 });
             }
-            
+
             // Reviews BY User 5 for LENDING loans (116-123) - reviewing the borrowers
             for (int i = 0; i < 8; i++)
             {
                 int reviewedUserId = (i % 4) + 1; // Users 1-4
                 int rating = i % 3 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1829,7 +1869,7 @@ namespace ComicBooksLoanAppAPI.Data
             {
                 int reviewedUserId = (i % 5) + 1;
                 int rating = i % 6 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -1844,13 +1884,13 @@ namespace ComicBooksLoanAppAPI.Data
                     DateSubmitted = DateTime.UtcNow.AddMonths(-(13 - (i / 2))).AddDays(14)
                 });
             }
-            
+
             // Reviews FOR User 6 (Henry) - Others reviewing Henry
             for (int i = 0; i < 11; i++)
             {
                 int reviewerId = (i % 5) + 1;
                 int rating = i % 6 == 0 ? 4 : 5;
-                
+
                 reviews.Add(new Review
                 {
                     Id = reviewId++,
@@ -2264,7 +2304,7 @@ namespace ComicBooksLoanAppAPI.Data
             IsRead = false
         }
         };
-    }
+        }
 
         /// <summary>
         /// Hashes a password using PBKDF2 with SHA256 (matching AuthenticationService).
