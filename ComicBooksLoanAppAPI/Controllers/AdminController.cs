@@ -157,5 +157,135 @@ namespace ComicBooksLoanAppAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Comic rejected." });
         }
+
+        /// <summary>
+        /// Gets all approved users for management.
+        /// </summary>
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _context.Users
+                .Where(u => u.ApprovalStatus == Models.ApprovalStatus.Approved && u.Role != "Admin")
+                .Include(u => u.Comics)
+                .OrderBy(u => u.Username)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Username,
+                    u.FullName,
+                    u.Email,
+                    u.City,
+                    u.MemberSince,
+                    u.IsVerified,
+                    u.AverageRating,
+                    u.SuccessfulLoans,
+                    ComicsCount = u.Comics.Count
+                })
+                .ToListAsync();
+            return Ok(users);
+        }
+
+        /// <summary>
+        /// Blocks a user account.
+        /// </summary>
+        [HttpPost("users/{id}/block")]
+        public async Task<IActionResult> BlockUser([FromRoute] int id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return BadRequest(new { message = "Cannot block admin users." });
+            
+            user.ApprovalStatus = Models.ApprovalStatus.Rejected;
+            user.IsVerified = false;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User blocked successfully." });
+        }
+
+        /// <summary>
+        /// Deletes a user account and all related data.
+        /// </summary>
+        [HttpDelete("users/{id}")]
+        public async Task<IActionResult> DeleteUser([FromRoute] int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.Comics)
+                .Include(u => u.LoansAsLender)
+                .Include(u => u.LoansAsBorrower)
+                .Include(u => u.ReviewsReceived)
+                .FirstOrDefaultAsync(u => u.Id == id);
+            
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return BadRequest(new { message = "Cannot delete admin users." });
+
+            // Check for active loans
+            var activeLoans = user.LoansAsLender.Any(l => l.Status == "Active" || l.Status == "Overdue") ||
+                            user.LoansAsBorrower.Any(l => l.Status == "Active" || l.Status == "Overdue");
+            
+            if (activeLoans)
+                return BadRequest(new { message = "Cannot delete user with active loans. Please resolve all loans first." });
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User deleted successfully." });
+        }
+
+        /// <summary>
+        /// Gets all approved comics for management.
+        /// </summary>
+        [HttpGet("comics")]
+        public async Task<IActionResult> GetAllComics()
+        {
+            var comics = await _context.Comics
+                .Where(c => c.ApprovalStatus == Models.ApprovalStatus.Approved)
+                .Include(c => c.Owner)
+                .OrderByDescending(c => c.DateListed)
+                .ToListAsync();
+            return Ok(comics);
+        }
+
+        /// <summary>
+        /// Toggles comic visibility (IsAvailable flag).
+        /// </summary>
+        [HttpPost("comics/{id}/toggle-visibility")]
+        public async Task<IActionResult> ToggleComicVisibility([FromRoute] int id)
+        {
+            var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id);
+            if (comic == null) return NotFound();
+
+            // Check if comic is currently on loan
+            if (comic.IsOnLoan)
+                return BadRequest(new { message = "Cannot toggle visibility for comics currently on loan." });
+
+            comic.IsAvailable = !comic.IsAvailable;
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { message = $"Comic visibility toggled. Now {(comic.IsAvailable ? "visible" : "hidden")}.", isAvailable = comic.IsAvailable });
+        }
+
+        /// <summary>
+        /// Deletes a comic from the system.
+        /// </summary>
+        [HttpDelete("comics/{id}")]
+        public async Task<IActionResult> DeleteComic([FromRoute] int id)
+        {
+            var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id);
+            
+            if (comic == null) return NotFound();
+
+            // Check for active loans using IsOnLoan property
+            if (comic.IsOnLoan)
+                return BadRequest(new { message = "Cannot delete comic that is currently on loan." });
+
+            // Also check if there are any active/overdue loans for this comic in the Loans table
+            var hasActiveLoans = await _context.Loans
+                .AnyAsync(l => l.ComicId == id && (l.Status == "Active" || l.Status == "Overdue"));
+            
+            if (hasActiveLoans)
+                return BadRequest(new { message = "Cannot delete comic with active loans." });
+
+            _context.Comics.Remove(comic);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Comic deleted successfully." });
+        }
     }
 }

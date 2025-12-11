@@ -1,7 +1,9 @@
 @page "/admin/moderation"
 @inject A6_ComicBooksLoanApp.Services.AdminApiService AdminApi
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @using A6_ComicBooksLoanApp.Services
+@using static A6_ComicBooksLoanApp.Services.AdminApiService
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <MudText Typo="Typo.h4" Class="mb-4">
@@ -9,90 +11,237 @@
         Moderation Dashboard
     </MudText>
 
-    <MudGrid>
-        <!-- Summary Cards -->
-        <MudItem xs="12" md="6">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Pending Users</MudText>
-                            <MudText Typo="Typo.h4">@(pendingUsers?.Count ?? 0)</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.PendingActions" Size="Size.Large" Color="Color.Warning" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4">
+        <!-- Pending Approvals Tab -->
+        <MudTabPanel Text="Pending Approvals" Icon="@Icons.Material.Filled.PendingActions">
+            <MudGrid>
+                <!-- Summary Cards -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pending Users</MudText>
+                                    <MudText Typo="Typo.h4">@(pendingUsers?.Count ?? 0)</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.PendingActions" Size="Size.Large" Color="Color.Warning" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
 
-        <MudItem xs="12" md="6">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Pending Comics</MudText>
-                            <MudText Typo="Typo.h4">@(pendingComics?.Count ?? 0)</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Color="Color.Info" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pending Comics</MudText>
+                                    <MudText Typo="Typo.h4">@(pendingComics?.Count ?? 0)</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Color="Color.Info" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
 
-        <!-- Pending Users Section -->
-        <MudItem xs="12" Class="mt-4">
+                <!-- Pending Users Section -->
+                <MudItem xs="12" Class="mt-4">
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Typo="Typo.h5" Class="mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                            Pending Users
+                        </MudText>
+
+                        @if (pendingUsers is null)
+                        {
+                            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                            <MudText Align="Align.Center" Class="mt-2">Loading users...</MudText>
+                        }
+                        else if (pendingUsers.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                                No users pending approval. All caught up!
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudTable Items="@pendingUsers" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                                <HeaderContent>
+                                    <MudTh>Full Name</MudTh>
+                                    <MudTh>Username</MudTh>
+                                    <MudTh>Email</MudTh>
+                                    <MudTh>Member Since</MudTh>
+                                    <MudTh Style="text-align: right;">Actions</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Full Name">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                                                @context.FullName.First()
+                                            </MudAvatar>
+                                            <MudText>@context.FullName</MudText>
+                                        </MudStack>
+                                    </MudTd>
+                                    <MudTd DataLabel="Username">@context.Username</MudTd>
+                                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                                    <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM dd, yyyy")</MudTd>
+                                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                                        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+                                            <MudTooltip Text="Approve User">
+                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
+                                                             Color="Color.Success" 
+                                                             Size="Size.Small"
+                                                             OnClick="@(() => ApproveUser(context.Id))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Reject User">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
+                                                             Color="Color.Error" 
+                                                             Size="Size.Small"
+                                                             OnClick="@(() => RejectUser(context.Id))" />
+                                            </MudTooltip>
+                                        </MudStack>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Pending Comics Section -->
+                <MudItem xs="12" Class="mt-4">
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Typo="Typo.h5" Class="mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mr-2" />
+                            Pending Comics
+                        </MudText>
+
+                        @if (pendingComics is null)
+                        {
+                            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                            <MudText Align="Align.Center" Class="mt-2">Loading comics...</MudText>
+                        }
+                        else if (pendingComics.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                                No comics pending approval. All caught up!
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudTable Items="@pendingComics" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                                <HeaderContent>
+                                    <MudTh>Title</MudTh>
+                                    <MudTh>Issue</MudTh>
+                                    <MudTh>Publisher</MudTh>
+                                    <MudTh>Era</MudTh>
+                                    <MudTh>Condition</MudTh>
+                                    <MudTh Style="text-align: right;">Actions</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Title">
+                                        <MudText Typo="Typo.body2"><strong>@context.Title</strong></MudText>
+                                    </MudTd>
+                                    <MudTd DataLabel="Issue">#@context.IssueNumber</MudTd>
+                                    <MudTd DataLabel="Publisher">@context.Publisher</MudTd>
+                                    <MudTd DataLabel="Era">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                            @context.Era
+                                        </MudChip>
+                                    </MudTd>
+                                    <MudTd DataLabel="Condition">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">
+                                            @context.ConditionGrade
+                                        </MudChip>
+                                    </MudTd>
+                                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                                        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+                                            <MudTooltip Text="Approve Comic">
+                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
+                                                             Color="Color.Success" 
+                                                             Size="Size.Small"
+                                                             OnClick="@(() => ApproveComic(context.Id))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Reject Comic">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
+                                                             Color="Color.Error" 
+                                                             Size="Size.Small"
+                                                             OnClick="@(() => RejectComic(context.Id))" />
+                                            </MudTooltip>
+                                        </MudStack>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        <!-- User Management Tab -->
+        <MudTabPanel Text="User Management" Icon="@Icons.Material.Filled.ManageAccounts">
             <MudPaper Elevation="2" Class="pa-4">
                 <MudText Typo="Typo.h5" Class="mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
-                    Pending Users
+                    Manage Users
                 </MudText>
 
-                @if (pendingUsers is null)
+                @if (allUsers is null)
                 {
                     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
                     <MudText Align="Align.Center" Class="mt-2">Loading users...</MudText>
                 }
-                else if (pendingUsers.Count == 0)
+                else if (allUsers.Count == 0)
                 {
-                    <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
-                        No users pending approval. All caught up!
-                    </MudAlert>
+                    <MudAlert Severity="Severity.Info">No approved users found.</MudAlert>
                 }
                 else
                 {
-                    <MudTable Items="@pendingUsers" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                    <MudTable Items="@allUsers" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Filter="new Func<AdminUserDto,bool>(FilterUserFunc)">
+                        <ToolBarContent>
+                            <MudTextField @bind-Value="userSearchString" Placeholder="Search users..." Adornment="Adornment.Start" 
+                                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        </ToolBarContent>
                         <HeaderContent>
-                            <MudTh>Full Name</MudTh>
-                            <MudTh>Username</MudTh>
+                            <MudTh>User</MudTh>
                             <MudTh>Email</MudTh>
+                            <MudTh>City</MudTh>
                             <MudTh>Member Since</MudTh>
+                            <MudTh>Rating</MudTh>
+                            <MudTh>Loans</MudTh>
+                            <MudTh>Comics</MudTh>
                             <MudTh Style="text-align: right;">Actions</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            <MudTd DataLabel="Full Name">
+                            <MudTd DataLabel="User">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudAvatar Color="Color.Secondary" Size="Size.Small">
-                                        @context.FullName.First()
-                                    </MudAvatar>
-                                    <MudText>@context.FullName</MudText>
+                                    <MudAvatar Color="Color.Primary" Size="Size.Small">@context.FullName.First()</MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2"><strong>@context.FullName</strong></MudText>
+                                        <MudText Typo="Typo.caption">@@@context.Username</MudText>
+                                    </MudStack>
                                 </MudStack>
                             </MudTd>
-                            <MudTd DataLabel="Username">@context.Username</MudTd>
                             <MudTd DataLabel="Email">@context.Email</MudTd>
-                            <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM dd, yyyy")</MudTd>
+                            <MudTd DataLabel="City">@context.City</MudTd>
+                            <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM yyyy")</MudTd>
+                            <MudTd DataLabel="Rating">
+                                <MudRating SelectedValue="@((int)context.AverageRating)" ReadOnly="true" Size="Size.Small" />
+                            </MudTd>
+                            <MudTd DataLabel="Loans">@context.SuccessfulLoans</MudTd>
+                            <MudTd DataLabel="Comics">@context.ComicsCount</MudTd>
                             <MudTd DataLabel="Actions" Style="text-align: right;">
                                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
-                                    <MudTooltip Text="Approve User">
-                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
-                                                     Color="Color.Success" 
+                                    <MudTooltip Text="Block User">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                                     Color="Color.Warning" 
                                                      Size="Size.Small"
-                                                     OnClick="@(() => ApproveUser(context.Id))" />
+                                                     OnClick="@(() => BlockUserWithConfirmation(context.Id, context.Username))" />
                                     </MudTooltip>
-                                    <MudTooltip Text="Reject User">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
+                                    <MudTooltip Text="Delete User">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                      Color="Color.Error" 
                                                      Size="Size.Small"
-                                                     OnClick="@(() => RejectUser(context.Id))" />
+                                                     OnClick="@(() => DeleteUserWithConfirmation(context.Id, context.Username))" />
                                     </MudTooltip>
                                 </MudStack>
                             </MudTd>
@@ -100,67 +249,80 @@
                     </MudTable>
                 }
             </MudPaper>
-        </MudItem>
+        </MudTabPanel>
 
-        <!-- Pending Comics Section -->
-        <MudItem xs="12" Class="mt-4">
+        <!-- Comic Management Tab -->
+        <MudTabPanel Text="Comic Management" Icon="@Icons.Material.Filled.CollectionsBookmark">
             <MudPaper Elevation="2" Class="pa-4">
                 <MudText Typo="Typo.h5" Class="mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mr-2" />
-                    Pending Comics
+                    Manage Comics
                 </MudText>
 
-                @if (pendingComics is null)
+                @if (allComics is null)
                 {
                     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
                     <MudText Align="Align.Center" Class="mt-2">Loading comics...</MudText>
                 }
-                else if (pendingComics.Count == 0)
+                else if (allComics.Count == 0)
                 {
-                    <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
-                        No comics pending approval. All caught up!
-                    </MudAlert>
+                    <MudAlert Severity="Severity.Info">No approved comics found.</MudAlert>
                 }
                 else
                 {
-                    <MudTable Items="@pendingComics" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                    <MudTable Items="@allComics" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Filter="new Func<ComicDto,bool>(FilterComicFunc)">
+                        <ToolBarContent>
+                            <MudTextField @bind-Value="comicSearchString" Placeholder="Search comics..." Adornment="Adornment.Start" 
+                                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        </ToolBarContent>
                         <HeaderContent>
                             <MudTh>Title</MudTh>
                             <MudTh>Issue</MudTh>
                             <MudTh>Publisher</MudTh>
-                            <MudTh>Era</MudTh>
-                            <MudTh>Condition</MudTh>
+                            <MudTh>Owner</MudTh>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Visibility</MudTh>
                             <MudTh Style="text-align: right;">Actions</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            <MudTd DataLabel="Title">
-                                <MudText Typo="Typo.body2"><strong>@context.Title</strong></MudText>
-                            </MudTd>
+                            <MudTd DataLabel="Title"><strong>@context.Title</strong></MudTd>
                             <MudTd DataLabel="Issue">#@context.IssueNumber</MudTd>
                             <MudTd DataLabel="Publisher">@context.Publisher</MudTd>
-                            <MudTd DataLabel="Era">
-                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
-                                    @context.Era
-                                </MudChip>
+                            <MudTd DataLabel="Owner">@context.OwnerUsername</MudTd>
+                            <MudTd DataLabel="Status">
+                                @if (context.IsOnLoan)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">On Loan</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Available</MudChip>
+                                }
                             </MudTd>
-                            <MudTd DataLabel="Condition">
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">
-                                    @context.ConditionGrade
-                                </MudChip>
+                            <MudTd DataLabel="Visibility">
+                                @if (context.IsAvailable)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Visibility">Visible</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Icon="@Icons.Material.Filled.VisibilityOff">Hidden</MudChip>
+                                }
                             </MudTd>
                             <MudTd DataLabel="Actions" Style="text-align: right;">
                                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
-                                    <MudTooltip Text="Approve Comic">
-                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
-                                                     Color="Color.Success" 
+                                    <MudTooltip Text="@(context.IsAvailable ? "Hide Comic" : "Show Comic")">
+                                        <MudIconButton Icon="@(context.IsAvailable ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)" 
+                                                     Color="Color.Info" 
                                                      Size="Size.Small"
-                                                     OnClick="@(() => ApproveComic(context.Id))" />
+                                                     Disabled="@context.IsOnLoan"
+                                                     OnClick="@(() => ToggleComicVisibility(context.Id))" />
                                     </MudTooltip>
-                                    <MudTooltip Text="Reject Comic">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
+                                    <MudTooltip Text="Delete Comic">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                      Color="Color.Error" 
                                                      Size="Size.Small"
-                                                     OnClick="@(() => RejectComic(context.Id))" />
+                                                     OnClick="@(() => DeleteComicWithConfirmation(context.Id, context.Title))" />
                                     </MudTooltip>
                                 </MudStack>
                             </MudTd>
@@ -168,25 +330,55 @@
                     </MudTable>
                 }
             </MudPaper>
-        </MudItem>
-    </MudGrid>
+        </MudTabPanel>
+    </MudTabs>
 </MudContainer>
 
 @code {
     List<UserDto>? pendingUsers;
     List<ComicDto>? pendingComics;
+    List<AdminUserDto>? allUsers;
+    List<ComicDto>? allComics;
+    
+    string userSearchString = "";
+    string comicSearchString = "";
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        await LoadAllData();
     }
 
-    private async Task LoadData()
+    private async Task LoadAllData()
+    {
+        await Task.WhenAll(
+            LoadPendingUsers(),
+            LoadPendingComics(),
+            LoadAllUsers(),
+            LoadAllComics()
+        );
+    }
+
+    private async Task LoadPendingUsers()
     {
         pendingUsers = await AdminApi.GetPendingUsersAsync();
+    }
+
+    private async Task LoadPendingComics()
+    {
         pendingComics = await AdminApi.GetPendingComicsAsync();
     }
 
+    private async Task LoadAllUsers()
+    {
+        allUsers = await AdminApi.GetAllUsersAsync();
+    }
+
+    private async Task LoadAllComics()
+    {
+        allComics = await AdminApi.GetAllComicsAsync();
+    }
+
+    // Pending Users Actions
     private async Task ApproveUser(int id)
     {
         if (await AdminApi.ApproveUserAsync(id))
@@ -215,6 +407,7 @@
         }
     }
 
+    // Pending Comics Actions
     private async Task ApproveComic(int id)
     {
         if (await AdminApi.ApproveComicAsync(id))
@@ -241,5 +434,119 @@
         {
             Snackbar.Add("Failed to reject comic.", Severity.Error);
         }
+    }
+
+    // User Management Actions
+    private async Task BlockUserWithConfirmation(int userId, string username)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Block User",
+            $"Are you sure you want to block user '{username}'? They will no longer be able to access the platform.",
+            yesText: "Block", cancelText: "Cancel");
+        
+        if (result == true)
+        {
+            if (await AdminApi.BlockUserAsync(userId))
+            {
+                allUsers = allUsers?.Where(u => u.Id != userId).ToList();
+                Snackbar.Add($"User '{username}' blocked successfully.", Severity.Warning);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to block user.", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteUserWithConfirmation(int userId, string username)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete User",
+            $"Are you sure you want to permanently delete user '{username}'? This action cannot be undone and will remove all their data.",
+            yesText: "Delete", cancelText: "Cancel");
+        
+        if (result == true)
+        {
+            if (await AdminApi.DeleteUserAsync(userId))
+            {
+                allUsers = allUsers?.Where(u => u.Id != userId).ToList();
+                Snackbar.Add($"User '{username}' deleted successfully.", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete user. They may have active loans.", Severity.Error);
+            }
+        }
+    }
+
+    // Comic Management Actions
+    private async Task ToggleComicVisibility(int comicId)
+    {
+        var (success, isAvailable) = await AdminApi.ToggleComicVisibilityAsync(comicId);
+        if (success)
+        {
+            var comic = allComics?.FirstOrDefault(c => c.Id == comicId);
+            if (comic != null && isAvailable.HasValue)
+            {
+                comic.IsAvailable = isAvailable.Value;
+                Snackbar.Add($"Comic is now {(isAvailable.Value ? "visible" : "hidden")}.", Severity.Info);
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            Snackbar.Add("Failed to toggle comic visibility. Comic may be on loan.", Severity.Error);
+        }
+    }
+
+    private async Task DeleteComicWithConfirmation(int comicId, string title)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Comic",
+            $"Are you sure you want to permanently delete '{title}'? This action cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+        
+        if (result == true)
+        {
+            if (await AdminApi.DeleteComicAsync(comicId))
+            {
+                allComics = allComics?.Where(c => c.Id != comicId).ToList();
+                Snackbar.Add($"Comic '{title}' deleted successfully.", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete comic. It may have active loans.", Severity.Error);
+            }
+        }
+    }
+
+    // Search Filters
+    private bool FilterUserFunc(AdminUserDto user)
+    {
+        if (string.IsNullOrWhiteSpace(userSearchString))
+            return true;
+        if (user.Username.Contains(userSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (user.FullName.Contains(userSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (user.Email.Contains(userSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (user.City != null && user.City.Contains(userSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private bool FilterComicFunc(ComicDto comic)
+    {
+        if (string.IsNullOrWhiteSpace(comicSearchString))
+            return true;
+        if (comic.Title.Contains(comicSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (comic.Publisher.Contains(comicSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
     }
 }
