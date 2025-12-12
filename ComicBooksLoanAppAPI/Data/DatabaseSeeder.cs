@@ -59,6 +59,10 @@ namespace ComicBooksLoanAppAPI.Data
             // Seed Messages (a couple between members, some read/unread)
             var messages = GetSeedMessages();
             modelBuilder.Entity<Message>().HasData(messages);
+
+            // Seed Announcements (platform news and updates)
+            var announcements = GetSeedAnnouncements();
+            modelBuilder.Entity<Announcement>().HasData(announcements);
         }
 
         private static List<User> GetSampleUsers()
@@ -2304,6 +2308,64 @@ namespace ComicBooksLoanAppAPI.Data
             IsRead = false
         }
         };
+        }
+
+        private static List<Announcement> GetSeedAnnouncements()
+        {
+            var now = DateTime.UtcNow;
+            return new List<Announcement>
+            {
+                new Announcement
+                {
+                    Id = 1,
+                    Title = "Welcome to Comic Books Loan Exchange! 📚",
+                    Content = "We're excited to launch this platform connecting comic book collectors across Skåne. Our community is built on trust, shared passion, and the joy of discovering great stories. Start by browsing available comics or listing your own collection!",
+                    Type = AnnouncementType.General,
+                    CreatedByUserId = 6, // Admin user
+                    CreatedAt = now.AddDays(-30),
+                    IsActive = true
+                },
+                new Announcement
+                {
+                    Id = 2,
+                    Title = "New Feature: Review System Live! ⭐",
+                    Content = "You can now leave reviews after completing loans! Help build trust in our community by sharing your experiences as both a lender and borrower. Great reviews help everyone make informed decisions about who to lend to.",
+                    Type = AnnouncementType.Feature,
+                    CreatedByUserId = 6, // Admin user
+                    CreatedAt = now.AddDays(-15),
+                    IsActive = true
+                },
+                new Announcement
+                {
+                    Id = 3,
+                    Title = "Meetup Guidelines Updated 📍",
+                    Content = "For everyone's safety, we recommend meeting in public places like cafes, libraries, or comic book shops. Popular spots in Malmö include Stortorget, Malmö Library, and Central Station. Always verify identity and inspect comics during the handoff.",
+                    Type = AnnouncementType.Update,
+                    CreatedByUserId = 6, // Admin user
+                    CreatedAt = now.AddDays(-7),
+                    IsActive = true
+                },
+                new Announcement
+                {
+                    Id = 4,
+                    Title = "Growing Community: 100+ Comics Available! 🎉",
+                    Content = "Our lending library has reached over 100 comics available for loan! From Bronze Age classics to modern indie titles, there's something for everyone. Thank you to all our collectors for sharing their passion.",
+                    Type = AnnouncementType.Event,
+                    CreatedByUserId = 6, // Admin user
+                    CreatedAt = now.AddDays(-3),
+                    IsActive = true
+                },
+                new Announcement
+                {
+                    Id = 5,
+                    Title = "Tips for New Members 💡",
+                    Content = "New to comic lending? Start small! Request a shorter loan period for your first exchanges to build trust. Always communicate clearly about condition expectations, and don't hesitate to use our messaging system to coordinate meetups.",
+                    Type = AnnouncementType.General,
+                    CreatedByUserId = 6, // Admin user
+                    CreatedAt = now.AddHours(-12),
+                    IsActive = true
+                }
+            };
         }
 
         /// <summary>

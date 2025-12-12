@@ -82,8 +82,8 @@ namespace A6_ComicBooksLoanApp.Services
 
         public async Task<(bool success, bool? isAvailable)> ToggleComicVisibilityAsync(int comicId)
         {
-            try 
-            { 
+            try
+            {
                 var res = await _httpClient.PostAsync($"api/admin/comics/{comicId}/toggle-visibility", null);
                 if (res.IsSuccessStatusCode)
                 {
@@ -99,6 +99,49 @@ namespace A6_ComicBooksLoanApp.Services
         {
             try { var res = await _httpClient.DeleteAsync($"api/admin/comics/{comicId}"); return res.IsSuccessStatusCode; }
             catch (HttpRequestException ex) { _logger.LogError(ex, "Error deleting comic"); return false; }
+        }
+
+        // Announcements
+        public async Task<List<AnnouncementDto>> GetActiveAnnouncementsAsync()
+        {
+            try { return await _httpClient.GetFromJsonAsync<List<AnnouncementDto>>("api/admin/announcements") ?? new(); }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error getting active announcements"); return new(); }
+        }
+
+        public async Task<List<AnnouncementDto>> GetAllAnnouncementsAsync()
+        {
+            try { return await _httpClient.GetFromJsonAsync<List<AnnouncementDto>>("api/admin/announcements/all") ?? new(); }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error getting all announcements"); return new(); }
+        }
+
+        public async Task<AnnouncementDto?> CreateAnnouncementAsync(CreateAnnouncementDto dto)
+        {
+            try
+            {
+                var res = await _httpClient.PostAsJsonAsync("api/admin/announcements", dto);
+                if (res.IsSuccessStatusCode)
+                    return await res.Content.ReadFromJsonAsync<AnnouncementDto>();
+                return null;
+            }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error creating announcement"); return null; }
+        }
+
+        public async Task<AnnouncementDto?> UpdateAnnouncementAsync(int announcementId, UpdateAnnouncementDto dto)
+        {
+            try
+            {
+                var res = await _httpClient.PutAsJsonAsync($"api/admin/announcements/{announcementId}", dto);
+                if (res.IsSuccessStatusCode)
+                    return await res.Content.ReadFromJsonAsync<AnnouncementDto>();
+                return null;
+            }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error updating announcement"); return null; }
+        }
+
+        public async Task<bool> DeleteAnnouncementAsync(int announcementId)
+        {
+            try { var res = await _httpClient.DeleteAsync($"api/admin/announcements/{announcementId}"); return res.IsSuccessStatusCode; }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error deleting announcement"); return false; }
         }
 
         private class ToggleVisibilityResponse
@@ -119,5 +162,33 @@ namespace A6_ComicBooksLoanApp.Services
             public int SuccessfulLoans { get; set; }
             public int ComicsCount { get; set; }
         }
+    }
+
+    // DTOs for Announcements
+    public class AnnouncementDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsActive { get; set; }
+        public string CreatedByUsername { get; set; } = string.Empty;
+    }
+
+    public class CreateAnnouncementDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Type { get; set; } = "General";
+    }
+
+    public class UpdateAnnouncementDto
+    {
+        public string? Title { get; set; }
+        public string? Content { get; set; }
+        public string? Type { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

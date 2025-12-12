@@ -1,5 +1,7 @@
 ﻿@page "/"
 @using MudBlazor
+@using A6_ComicBooksLoanApp.Services
+@inject AdminApiService AdminApiService
 
 <PageTitle>Comic Books Loan Exchange</PageTitle>
 
@@ -13,81 +15,66 @@
                         📚 Comic Books Loan Exchange
                     </MudText>
                     <MudText Typo="Typo.subtitle1">
-                        Borrow and lend comic books within a trusted community. Share your passion with fellow collectors.
+                        Borrow and lend comic books within a trusted community. Share your passion with fellow
+                        collectors.
                     </MudText>
                     <MudText Typo="Typo.body2" Class="mt-4">
-                        <strong>How it works:</strong> Request to borrow comics from other collectors, lend your comics to those who appreciate them, and build connections through shared collecting interests.
+                        <strong>How it works:</strong> Request to borrow comics from other collectors, lend your comics
+                        to those who appreciate them, and build connections through shared collecting interests.
                     </MudText>
                 </MudContainer>
             </MudPaper>
         </MudItem>
 
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mb-2"
-                        Style="font-size: 2rem; color: #667eea;"></MudIcon>
-                    <MudText Typo="Typo.h6">Browse Comics</MudText>
-                    <MudText Typo="Typo.body2">
-                        Discover comics available for loan
-                    </MudText>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" Href="/comics">Browse Now
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.Handshake" Class="mb-2"
-                        Style="font-size: 2rem; color: #764ba2;"></MudIcon>
-                    <MudText Typo="Typo.h6">Loan Requests</MudText>
-                    <MudText Typo="Typo.body2">
-                        Request comics and manage loans
-                    </MudText>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" Href="/guide">How It Works
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mb-2"
-                        Style="font-size: 2rem; color: #f093fb;"></MudIcon>
-                    <MudText Typo="Typo.h6">Flexible Duration</MudText>
-                    <MudText Typo="Typo.body2">
-                        Set loan periods that work for you
-                    </MudText>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" Href="/loans">My Loans
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.Star" Class="mb-2" Style="font-size: 2rem; color: #ffd89b;">
-                    </MudIcon>
-                    <MudText Typo="Typo.h6">Trusted Community</MudText>
-                    <MudText Typo="Typo.body2">
-                        Connect with verified collectors
-                    </MudText>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" Href="/community">View
-                        Members</MudButton>
-                </MudCardActions>
-            </MudCard>
+        <!-- Platform News & Updates Section -->
+        <MudItem xs="12" Class="mt-6">
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-4">
+                📰 Platform News & Updates
+            </MudText>
+            @if (isLoading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (announcements != null && announcements.Any())
+            {
+                <MudGrid>
+                    @foreach (var announcement in announcements)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard Elevation="2" Style="height: 100%;">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">
+                                            @GetAnnouncementIcon(announcement.Type) @announcement.Title
+                                        </MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudChip T="string" Size="Size.Small" Color="@GetAnnouncementColor(announcement.Type)"
+                                            Variant="Variant.Text">
+                                            @announcement.Type
+                                        </MudChip>
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudText Typo="Typo.body2">
+                                        @announcement.Content
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Class="mt-2" Style="color: #999;">
+                                        Posted @FormatAnnouncementDate(announcement.CreatedAt) by
+                                        @announcement.CreatedByUsername
+                                    </MudText>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    No announcements at this time. Check back later for platform updates!
+                </MudAlert>
+            }
         </MudItem>
     </MudGrid>
 
@@ -100,23 +87,20 @@
                 </MudText>
                 <MudGrid Class="mt-4">
                     <MudItem xs="12" sm="6" md="4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" 
-                            FullWidth StartIcon="@Icons.Material.Filled.LocalFireDepartment"
-                            Href="/comics?era=Bronze Age">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth
+                            StartIcon="@Icons.Material.Filled.LocalFireDepartment" Href="/comics?era=Bronze Age">
                             Bronze Age Marvel
                         </MudButton>
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" 
-                            FullWidth StartIcon="@Icons.Material.Filled.LocalFireDepartment"
-                            Href="/comics?era=Silver Age">
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth
+                            StartIcon="@Icons.Material.Filled.LocalFireDepartment" Href="/comics?era=Silver Age">
                             Silver Age DC
                         </MudButton>
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Success" 
-                            FullWidth StartIcon="@Icons.Material.Filled.LocalFireDepartment"
-                            Href="/comics?filter=keyissues">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth
+                            StartIcon="@Icons.Material.Filled.LocalFireDepartment" Href="/comics?filter=keyissues">
                             Key Issues
                         </MudButton>
                     </MudItem>
@@ -132,13 +116,15 @@
                 <MudStepper>
                     <MudStep Title="Create Profile" Description="Join the community and showcase your collection">
                         <MudText Typo="Typo.body2">
-                            Register and set up your profile with your collecting focus, reading interests, and preferred loan terms.
+                            Register and set up your profile with your collecting focus, reading interests, and
+                            preferred loan terms.
                             Add comics from your collection that you're willing to lend.
                         </MudText>
                     </MudStep>
                     <MudStep Title="Browse & Request" Description="Find comics to borrow and send loan requests">
                         <MudText Typo="Typo.body2">
-                            Search available comics by era, character, publisher, or condition. When you find something interesting,
+                            Search available comics by era, character, publisher, or condition. When you find something
+                            interesting,
                             send a loan request to the owner specifying your desired loan duration.
                         </MudText>
                     </MudStep>
@@ -150,7 +136,8 @@
                     </MudStep>
                     <MudStep Title="Loan Period" Description="Enjoy reading while respecting the agreed return date">
                         <MudText Typo="Typo.body2">
-                            Both parties track active loans with clear return dates. Communicate through the messaging system
+                            Both parties track active loans with clear return dates. Communicate through the messaging
+                            system
                             to coordinate returns or extend loans if needed.
                         </MudText>
                     </MudStep>
@@ -165,3 +152,69 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
+@code {
+    private List<AnnouncementDto> announcements = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnnouncements();
+    }
+
+    private async Task LoadAnnouncements()
+    {
+        isLoading = true;
+        try
+        {
+            announcements = await AdminApiService.GetActiveAnnouncementsAsync();
+        }
+        catch (Exception)
+        {
+            announcements = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetAnnouncementIcon(string type)
+    {
+        return type switch
+        {
+            "Feature" => "",
+            "Maintenance" => "",
+            "Event" => "",
+            "Update" => "",
+            _ => ""
+        };
+    }
+
+    private Color GetAnnouncementColor(string type)
+    {
+        return type switch
+        {
+            "Feature" => Color.Primary,
+            "Maintenance" => Color.Warning,
+            "Event" => Color.Success,
+            "Update" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private string FormatAnnouncementDate(DateTime date)
+    {
+        var timeSpan = DateTime.UtcNow - date;
+
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minutes ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} hours ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
+
+        return date.ToString("MMM dd, yyyy");
+    }
+}

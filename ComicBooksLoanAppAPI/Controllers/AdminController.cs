@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ComicBooksLoanAppAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using ComicBooksLoanAppAPI.Models.DTOs;
 
 namespace ComicBooksLoanAppAPI.Controllers
 {
@@ -194,7 +195,7 @@ namespace ComicBooksLoanAppAPI.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return NotFound();
             if (user.Role == "Admin") return BadRequest(new { message = "Cannot block admin users." });
-            
+
             user.ApprovalStatus = Models.ApprovalStatus.Rejected;
             user.IsVerified = false;
             await _context.SaveChangesAsync();
@@ -213,14 +214,14 @@ namespace ComicBooksLoanAppAPI.Controllers
                 .Include(u => u.LoansAsBorrower)
                 .Include(u => u.ReviewsReceived)
                 .FirstOrDefaultAsync(u => u.Id == id);
-            
+
             if (user == null) return NotFound();
             if (user.Role == "Admin") return BadRequest(new { message = "Cannot delete admin users." });
 
             // Check for active loans
             var activeLoans = user.LoansAsLender.Any(l => l.Status == "Active" || l.Status == "Overdue") ||
                             user.LoansAsBorrower.Any(l => l.Status == "Active" || l.Status == "Overdue");
-            
+
             if (activeLoans)
                 return BadRequest(new { message = "Cannot delete user with active loans. Please resolve all loans first." });
 
@@ -258,7 +259,7 @@ namespace ComicBooksLoanAppAPI.Controllers
 
             comic.IsAvailable = !comic.IsAvailable;
             await _context.SaveChangesAsync();
-            
+
             return Ok(new { message = $"Comic visibility toggled. Now {(comic.IsAvailable ? "visible" : "hidden")}.", isAvailable = comic.IsAvailable });
         }
 
@@ -269,7 +270,7 @@ namespace ComicBooksLoanAppAPI.Controllers
         public async Task<IActionResult> DeleteComic([FromRoute] int id)
         {
             var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id);
-            
+
             if (comic == null) return NotFound();
 
             // Check for active loans using IsOnLoan property
@@ -279,13 +280,175 @@ namespace ComicBooksLoanAppAPI.Controllers
             // Also check if there are any active/overdue loans for this comic in the Loans table
             var hasActiveLoans = await _context.Loans
                 .AnyAsync(l => l.ComicId == id && (l.Status == "Active" || l.Status == "Overdue"));
-            
+
             if (hasActiveLoans)
                 return BadRequest(new { message = "Cannot delete comic with active loans." });
 
             _context.Comics.Remove(comic);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Comic deleted successfully." });
+        }
+
+        // ============================================================
+        // ANNOUNCEMENTS MANAGEMENT
+        // ============================================================
+
+        /// <summary>
+        /// Gets all active announcements (public endpoint).
+        /// </summary>
+        [HttpGet("announcements")]
+        public async Task<IActionResult> GetActiveAnnouncements()
+        {
+            var announcements = await _context.Announcements
+                .Where(a => a.IsActive)
+                .Include(a => a.CreatedBy)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new AnnouncementDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Content = a.Content,
+                    Type = a.Type.ToString(),
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt,
+                    IsActive = a.IsActive,
+                    CreatedByUsername = a.CreatedBy != null ? a.CreatedBy.Username : "Admin"
+                })
+                .ToListAsync();
+
+            return Ok(announcements);
+        }
+
+        /// <summary>
+        /// Gets all announcements including inactive ones (admin only).
+        /// </summary>
+        [HttpGet("announcements/all")]
+        public async Task<IActionResult> GetAllAnnouncements()
+        {
+            var announcements = await _context.Announcements
+                .Include(a => a.CreatedBy)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new AnnouncementDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Content = a.Content,
+                    Type = a.Type.ToString(),
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt,
+                    IsActive = a.IsActive,
+                    CreatedByUsername = a.CreatedBy != null ? a.CreatedBy.Username : "Admin"
+                })
+                .ToListAsync();
+
+            return Ok(announcements);
+        }
+
+        /// <summary>
+        /// Creates a new announcement (admin only).
+        /// </summary>
+        [HttpPost("announcements")]
+        public async Task<IActionResult> CreateAnnouncement([FromBody] CreateAnnouncementDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Content))
+                return BadRequest(new { message = "Title and content are required." });
+
+            // Parse the type
+            if (!Enum.TryParse<Models.AnnouncementType>(dto.Type, true, out var announcementType))
+                announcementType = Models.AnnouncementType.General;
+
+            // For now, use admin user (ID = 6 from seed data)
+            // In production, this would come from the authenticated user
+            var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.Role == "Admin");
+            if (adminUser == null)
+                return BadRequest(new { message = "No admin user found." });
+
+            var announcement = new Models.Announcement
+            {
+                Title = dto.Title,
+                Content = dto.Content,
+                Type = announcementType,
+                CreatedByUserId = adminUser.Id,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            _context.Announcements.Add(announcement);
+            await _context.SaveChangesAsync();
+
+            var result = new AnnouncementDto
+            {
+                Id = announcement.Id,
+                Title = announcement.Title,
+                Content = announcement.Content,
+                Type = announcement.Type.ToString(),
+                CreatedAt = announcement.CreatedAt,
+                UpdatedAt = announcement.UpdatedAt,
+                IsActive = announcement.IsActive,
+                CreatedByUsername = adminUser.Username
+            };
+
+            return CreatedAtAction(nameof(GetActiveAnnouncements), new { id = announcement.Id }, result);
+        }
+
+        /// <summary>
+        /// Updates an existing announcement (admin only).
+        /// </summary>
+        [HttpPut("announcements/{id}")]
+        public async Task<IActionResult> UpdateAnnouncement([FromRoute] int id, [FromBody] UpdateAnnouncementDto dto)
+        {
+            var announcement = await _context.Announcements
+                .Include(a => a.CreatedBy)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (announcement == null)
+                return NotFound(new { message = "Announcement not found." });
+
+            if (!string.IsNullOrWhiteSpace(dto.Title))
+                announcement.Title = dto.Title;
+
+            if (!string.IsNullOrWhiteSpace(dto.Content))
+                announcement.Content = dto.Content;
+
+            if (!string.IsNullOrWhiteSpace(dto.Type) && Enum.TryParse<Models.AnnouncementType>(dto.Type, true, out var announcementType))
+                announcement.Type = announcementType;
+
+            if (dto.IsActive.HasValue)
+                announcement.IsActive = dto.IsActive.Value;
+
+            announcement.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var result = new AnnouncementDto
+            {
+                Id = announcement.Id,
+                Title = announcement.Title,
+                Content = announcement.Content,
+                Type = announcement.Type.ToString(),
+                CreatedAt = announcement.CreatedAt,
+                UpdatedAt = announcement.UpdatedAt,
+                IsActive = announcement.IsActive,
+                CreatedByUsername = announcement.CreatedBy?.Username ?? "Admin"
+            };
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Deletes an announcement (admin only).
+        /// </summary>
+        [HttpDelete("announcements/{id}")]
+        public async Task<IActionResult> DeleteAnnouncement([FromRoute] int id)
+        {
+            var announcement = await _context.Announcements.FirstOrDefaultAsync(a => a.Id == id);
+
+            if (announcement == null)
+                return NotFound(new { message = "Announcement not found." });
+
+            _context.Announcements.Remove(announcement);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Announcement deleted successfully." });
         }
     }
 }

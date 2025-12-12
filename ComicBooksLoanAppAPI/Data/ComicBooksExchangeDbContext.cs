@@ -60,6 +60,11 @@ namespace ComicBooksLoanAppAPI.Data
         public DbSet<Message> Messages { get; set; } = null!;
 
         /// <summary>
+        /// Gets or sets the Announcements DbSet for database operations on platform announcements.
+        /// </summary>
+        public DbSet<Announcement> Announcements { get; set; } = null!;
+
+        /// <summary>
         /// Configures the database schema and relationships.
         /// </summary>
         /// <param name="modelBuilder">The model builder used to configure entity relationships.</param>

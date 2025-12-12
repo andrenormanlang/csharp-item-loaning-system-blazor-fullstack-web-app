@@ -1,0 +1,290 @@
+@page "/admin/announcements"
+@inject A6_ComicBooksLoanApp.Services.AdminApiService AdminApi
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using A6_ComicBooksLoanApp.Services
+@using static A6_ComicBooksLoanApp.Services.AdminApiService
+@using A6_ComicBooksLoanApp.Components.Dialogs
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-2" />
+        Manage Platform Announcements
+    </MudText>
+
+    <MudGrid>
+        <!-- Summary Card -->
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Total Announcements</MudText>
+                            <MudText Typo="Typo.h4">@(announcements?.Count ?? 0)</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.Campaign" Size="Size.Large" Color="Color.Primary" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Active Announcements</MudText>
+                            <MudText Typo="Typo.h4">@(announcements?.Count(a => a.IsActive) ?? 0)</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Large" Color="Color.Success" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Inactive Announcements</MudText>
+                            <MudText Typo="Typo.h4">@(announcements?.Count(a => !a.IsActive) ?? 0)</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.VisibilityOff" Size="Size.Large" Color="Color.Default" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Action Buttons -->
+        <MudItem xs="12" Class="mt-2 mb-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                OnClick="OpenCreateDialog">
+                Create New Announcement
+            </MudButton>
+        </MudItem>
+
+        <!-- Announcements Table -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h5" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.List" Class="mr-2" />
+                    All Announcements
+                </MudText>
+
+                @if (announcements is null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                    <MudText Align="Align.Center" Class="mt-2">Loading announcements...</MudText>
+                }
+                else if (announcements.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info">
+                        No announcements yet. Create your first one to get started!
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@announcements" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Title</MudTh>
+                            <MudTh>Type</MudTh>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Created At</MudTh>
+                            <MudTh>Created By</MudTh>
+                            <MudTh Style="text-align: right;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Title">
+                                <MudText Typo="Typo.body2" Class="font-weight-bold">
+                                    @GetAnnouncementIcon(context.Type) @context.Title
+                                </MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Type">
+                                <MudChip T="string" Size="Size.Small" Color="@GetAnnouncementColor(context.Type)"
+                                    Variant="Variant.Text">
+                                    @context.Type
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                @if (context.IsActive)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                                        Icon="@Icons.Material.Filled.Visibility">
+                                        Active
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                                        Icon="@Icons.Material.Filled.VisibilityOff">
+                                        Inactive
+                                    </MudChip>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Created At">
+                                <MudText Typo="Typo.body2">
+                                    @context.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                                </MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Created By">
+                                <MudText Typo="Typo.body2">
+                                    @context.CreatedByUsername
+                                </MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                                    <MudTooltip Text="Edit">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                            Size="Size.Small" OnClick="@(() => OpenEditDialog(context))" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="@(context.IsActive ? "Deactivate" : "Activate")">
+                                        <MudIconButton
+                                            Icon="@(context.IsActive ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                            Color="@(context.IsActive ? Color.Warning : Color.Success)" Size="Size.Small"
+                                            OnClick="@(() => ToggleAnnouncementStatus(context))" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Delete">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                            Size="Size.Small" OnClick="@(() => DeleteAnnouncement(context))" />
+                                    </MudTooltip>
+                                </MudButtonGroup>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<AnnouncementDto>? announcements;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnnouncements();
+    }
+
+    private async Task LoadAnnouncements()
+    {
+        announcements = null;
+        announcements = await AdminApi.GetAllAnnouncementsAsync();
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters<AnnouncementDialog>
+{
+{ x => x.IsEditMode, false }
+};
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<AnnouncementDialog>("Create New Announcement", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is AnnouncementDto newAnnouncement)
+        {
+            await LoadAnnouncements();
+            Snackbar.Add("Announcement created successfully!", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(AnnouncementDto announcement)
+    {
+        var parameters = new DialogParameters<AnnouncementDialog>
+{
+{ x => x.IsEditMode, true },
+{ x => x.Announcement, announcement }
+};
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<AnnouncementDialog>("Edit Announcement", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is AnnouncementDto)
+        {
+            await LoadAnnouncements();
+            Snackbar.Add("Announcement updated successfully!", Severity.Success);
+        }
+    }
+
+    private async Task ToggleAnnouncementStatus(AnnouncementDto announcement)
+    {
+        var updateDto = new UpdateAnnouncementDto
+        {
+            IsActive = !announcement.IsActive
+        };
+
+        var result = await AdminApi.UpdateAnnouncementAsync(announcement.Id, updateDto);
+        if (result != null)
+        {
+            await LoadAnnouncements();
+            var status = result.IsActive ? "activated" : "deactivated";
+            Snackbar.Add($"Announcement {status} successfully!", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Failed to update announcement status.", Severity.Error);
+        }
+    }
+
+    private async Task DeleteAnnouncement(AnnouncementDto announcement)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+        "Confirm Delete",
+        $"Are you sure you want to delete the announcement '{announcement.Title}'? This action cannot be undone.",
+        yesText: "Delete", cancelText: "Cancel",
+        options: new DialogOptions { MaxWidth = MaxWidth.Small });
+
+        if (confirm == true)
+        {
+            var success = await AdminApi.DeleteAnnouncementAsync(announcement.Id);
+            if (success)
+            {
+                await LoadAnnouncements();
+                Snackbar.Add("Announcement deleted successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete announcement.", Severity.Error);
+            }
+        }
+    }
+
+    private string GetAnnouncementIcon(string type)
+    {
+        return type switch
+        {
+            "Feature" => "✨",
+            "Maintenance" => "🔧",
+            "Event" => "🎉",
+            "Update" => "📢",
+            _ => "📰"
+        };
+    }
+
+    private Color GetAnnouncementColor(string type)
+    {
+        return type switch
+        {
+            "Feature" => Color.Primary,
+            "Maintenance" => Color.Warning,
+            "Event" => Color.Success,
+            "Update" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

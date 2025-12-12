@@ -1,0 +1,149 @@
+@using A6_ComicBooksLoanApp.Services
+@using static A6_ComicBooksLoanApp.Services.AdminApiService
+@using MudBlazor
+@inject AdminApiService AdminApi
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@isValid">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="title" Label="Title" Required="true" RequiredError="Title is required"
+                        Variant="Variant.Outlined" Counter="100" MaxLength="100" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSelect @bind-Value="type" Label="Type" Variant="Variant.Outlined" Required="true">
+                        <MudSelectItem Value="@("General")">📰 General</MudSelectItem>
+                        <MudSelectItem Value="@("Feature")">✨ Feature</MudSelectItem>
+                        <MudSelectItem Value="@("Maintenance")">🔧 Maintenance</MudSelectItem>
+                        <MudSelectItem Value="@("Event")">🎉 Event</MudSelectItem>
+                        <MudSelectItem Value="@("Update")">📢 Update</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="content" Label="Content" Required="true"
+                        RequiredError="Content is required" Variant="Variant.Outlined" Lines="5" Counter="500"
+                        MaxLength="500" />
+                </MudItem>
+
+                @if (IsEditMode)
+                {
+                    <MudItem xs="12">
+                        <MudSwitch @bind-Value="isActive" Color="Color.Success"
+                            Label="@(isActive ? "Active (visible to users)" : "Inactive (hidden from users)")" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+            Disabled="@(!isValid || isSubmitting)">
+            @if (isSubmitting)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving...</MudText>
+            }
+            else
+            {
+                <text>@(IsEditMode ? "Update" : "Create")</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public bool IsEditMode { get; set; }
+
+    [Parameter]
+    public AnnouncementDto? Announcement { get; set; }
+
+    private MudForm? form;
+    private bool isValid;
+    private bool isSubmitting;
+
+    private string title = string.Empty;
+    private string content = string.Empty;
+    private string type = "General";
+    private bool isActive = true;
+
+    protected override void OnParametersSet()
+    {
+        if (IsEditMode && Announcement != null)
+        {
+            title = Announcement.Title;
+            content = Announcement.Content;
+            type = Announcement.Type;
+            isActive = Announcement.IsActive;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        if (form == null) return;
+
+        await form.Validate();
+        if (!isValid) return;
+
+        isSubmitting = true;
+        try
+        {
+            if (IsEditMode && Announcement != null)
+            {
+                var updateDto = new UpdateAnnouncementDto
+                {
+                    Title = title,
+                    Content = content,
+                    Type = type,
+                    IsActive = isActive
+                };
+
+                var result = await AdminApi.UpdateAnnouncementAsync(Announcement.Id, updateDto);
+                if (result != null)
+                {
+                    MudDialog?.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    Snackbar.Add("Failed to update announcement.", Severity.Error);
+                }
+            }
+            else
+            {
+                var createDto = new CreateAnnouncementDto
+                {
+                    Title = title,
+                    Content = content,
+                    Type = type
+                };
+
+                var result = await AdminApi.CreateAnnouncementAsync(createDto);
+                if (result != null)
+                {
+                    MudDialog?.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    Snackbar.Add("Failed to create announcement.", Severity.Error);
+                }
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

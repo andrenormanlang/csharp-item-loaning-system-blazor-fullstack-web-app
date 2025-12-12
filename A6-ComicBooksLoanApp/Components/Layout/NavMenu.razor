@@ -32,6 +32,7 @@
             <MudDivider Class="my-2" />
             <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
                 <MudNavLink Href="admin/moderation" Icon="@Icons.Material.Filled.Dashboard">Moderation Dashboard</MudNavLink>
+                <MudNavLink Href="admin/announcements" Icon="@Icons.Material.Filled.Campaign">Manage Announcements</MudNavLink>
             </MudNavGroup>
         }
         else if (IsUser)
@@ -96,7 +97,7 @@
 
         // Check if user is authenticated by reading from localStorage
         await LoadAuthState();
-        
+
         // Start polling for counts if authenticated
         if (isAuthenticated)
         {
@@ -141,7 +142,7 @@
         currentUsername = AuthState.CurrentUsername;
         currentUserId = AuthState.CurrentUserId;
         currentRole = AuthState.CurrentRole;
-        
+
         if (isAuthenticated && currentUserId > 0)
         {
             _ = LoadCounts();
@@ -153,17 +154,17 @@
             unreadMessagesCount = 0;
             pendingLoanRequestsCount = 0;
         }
-        
+
         InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadCounts()
     {
         if (currentUserId <= 0) return;
-        
+
         await Task.WhenAll(
-            LoadUnreadMessagesCount(),
-            LoadPendingLoanRequestsCount()
+        LoadUnreadMessagesCount(),
+        LoadPendingLoanRequestsCount()
         );
     }
 
@@ -171,7 +172,8 @@
     {
         try
         {
-            unreadMessagesCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{currentUserId}");
+            unreadMessagesCount = await
+            Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{currentUserId}");
             await InvokeAsync(StateHasChanged);
         }
         catch
@@ -185,7 +187,8 @@
     {
         try
         {
-            pendingLoanRequestsCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/loans/requests/pending-count/{currentUserId}");
+            pendingLoanRequestsCount = await
+            Http.GetFromJsonAsync<int>($"http://localhost:5259/api/loans/requests/pending-count/{currentUserId}");
             await InvokeAsync(StateHasChanged);
         }
         catch
