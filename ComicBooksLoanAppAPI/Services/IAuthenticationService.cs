@@ -10,7 +10,18 @@ namespace ComicBooksLoanAppAPI.Services
         /// <summary>
         /// Registers a new user.
         /// </summary>
-        Task<(bool Success, string Message)> RegisterAsync(string email, string username, string fullName, string password);
+        Task<(bool Success, string Message)> RegisterAsync(
+            string email,
+            string username,
+            string fullName,
+            string password,
+            string city,
+            string zipCode,
+            string readingFocus,
+            string description,
+            string favoriteCharacters,
+            string? biography,
+            string? imageUrl);
 
         /// <summary>
         /// Authenticates a user and returns user object if successful.

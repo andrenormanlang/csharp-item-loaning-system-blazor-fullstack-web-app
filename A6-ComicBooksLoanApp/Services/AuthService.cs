@@ -23,10 +23,17 @@ namespace A6_ComicBooksLoanApp.Services
         /// Registers a new user account.
         /// </summary>
         public async Task<(bool Success, string Message)> RegisterAsync(
-            string email, 
-            string username, 
-            string fullName, 
-            string password)
+            string email,
+            string username,
+            string fullName,
+            string password,
+            string city,
+            string zipCode,
+            string readingFocus,
+            string description,
+            string favoriteCharacters,
+            string? biography,
+            string? imageUrl)
         {
             try
             {
@@ -35,7 +42,14 @@ namespace A6_ComicBooksLoanApp.Services
                     email,
                     username,
                     fullName,
-                    password
+                    password,
+                    city,
+                    zipCode,
+                    readingFocus,
+                    description,
+                    favoriteCharacters,
+                    biography,
+                    imageUrl
                 };
 
                 var response = await _httpClient.PostAsJsonAsync("/api/auth/register", registerRequest);
@@ -47,8 +61,33 @@ namespace A6_ComicBooksLoanApp.Services
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+
+                    // Try to extract a clear API error message
+                    string userMessage = "Registration failed. Please try again.";
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(errorContent);
+                        var root = doc.RootElement;
+                        if (root.ValueKind == JsonValueKind.Object)
+                        {
+                            if (root.TryGetProperty("message", out var msgEl) && msgEl.ValueKind == JsonValueKind.String)
+                                userMessage = msgEl.GetString() ?? userMessage;
+                            // Handle model state style errors (first error string)
+                            else if (root.EnumerateObject().FirstOrDefault().Value.ValueKind == JsonValueKind.Array)
+                            {
+                                var first = root.EnumerateObject().FirstOrDefault().Value.EnumerateArray().FirstOrDefault();
+                                if (first.ValueKind == JsonValueKind.String)
+                                    userMessage = first.GetString() ?? userMessage;
+                            }
+                        }
+                    }
+                    catch (Exception parseEx)
+                    {
+                        _logger.LogWarning(parseEx, "Failed to parse registration error response.");
+                    }
+
                     _logger.LogError($"Registration failed: {response.StatusCode} - {errorContent}");
-                    return (false, "Registration failed. Please try again.");
+                    return (false, userMessage);
                 }
             }
             catch (Exception ex)
@@ -62,7 +101,7 @@ namespace A6_ComicBooksLoanApp.Services
         /// Logs in a user with email and password.
         /// </summary>
         public async Task<(bool Success, UserData? User, string Message)> LoginAsync(
-            string email, 
+            string email,
             string password)
         {
             try
@@ -116,8 +155,8 @@ namespace A6_ComicBooksLoanApp.Services
                     _logger.LogInformation("User logged in. Id: {Id}, Username: {Username}, Role: {Role}",
                         id, username ?? "unknown", role ?? "unknown");
 
-                    return (true, new UserData 
-                    { 
+                    return (true, new UserData
+                    {
                         Id = id,
                         Username = username ?? "",
                         Email = email_ret ?? "",

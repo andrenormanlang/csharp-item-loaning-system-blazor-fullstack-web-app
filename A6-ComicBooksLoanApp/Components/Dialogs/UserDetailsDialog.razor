@@ -1,0 +1,107 @@
+@using A6_ComicBooksLoanApp.Services
+@using static A6_ComicBooksLoanApp.Services.AdminApiService
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        @if (User is not null)
+        {
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="mb-4">
+                        @if (!string.IsNullOrEmpty(User.ImageUrl))
+                        {
+                            <MudAvatar Size="Size.Large">
+                                <MudImage Src="@User.ImageUrl" Alt="@User.FullName" />
+                            </MudAvatar>
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Primary" Size="Size.Large">
+                                @User.FullName.First()
+                            </MudAvatar>
+                        }
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@User.FullName</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@@@User.Username</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Email</MudText>
+                    <MudText Typo="Typo.body2">@User.Email</MudText>
+                </MudItem>
+
+                @* <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Member Since</MudText>
+                    <MudText Typo="Typo.body2">@User.MemberSince.ToString("MMM dd, yyyy")</MudText>
+                </MudItem> *@
+
+                @if (!string.IsNullOrWhiteSpace(User.City))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">City</MudText>
+                        <MudText Typo="Typo.body2">@User.City</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(User.ZipCode))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Zip Code</MudText>
+                        <MudText Typo="Typo.body2">@User.ZipCode</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(User.ReadingFocus))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Reading Focus</MudText>
+                        <MudText Typo="Typo.body2">@User.ReadingFocus</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(User.Description))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Description</MudText>
+                        <MudText Typo="Typo.body2">@User.Description</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(User.FavoriteCharacters))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Favorite Characters</MudText>
+                        <MudText Typo="Typo.body2">@User.FavoriteCharacters</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(User.Biography))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Biography</MudText>
+                        <MudText Typo="Typo.body2">@User.Biography</MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public AdminApiService.UserDto? User { get; set; }
+
+    void Close() => MudDialog?.Close(DialogResult.Ok(true));
+}

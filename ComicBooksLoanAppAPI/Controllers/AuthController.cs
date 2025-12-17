@@ -34,7 +34,14 @@ namespace ComicBooksLoanAppAPI.Controllers
                     request.Email,
                     request.Username,
                     request.FullName,
-                    request.Password);
+                    request.Password,
+                    request.City,
+                    request.ZipCode,
+                    request.ReadingFocus,
+                    request.Description,
+                    request.FavoriteCharacters,
+                    request.Biography,
+                    request.ImageUrl);
 
                 if (!success)
                     return BadRequest(new { message });
@@ -105,5 +112,12 @@ namespace ComicBooksLoanAppAPI.Controllers
         public string Username { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string ZipCode { get; set; } = string.Empty;
+        public string ReadingFocus { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string FavoriteCharacters { get; set; } = string.Empty;
+        public string? Biography { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

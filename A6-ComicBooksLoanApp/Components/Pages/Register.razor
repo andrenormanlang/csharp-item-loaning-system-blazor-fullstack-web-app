@@ -56,7 +56,43 @@
                     <MudTextField @bind-Value="confirmPassword" Label="Confirm Password" Variant="Variant.Outlined"
                         FullWidth InputType="InputType.Password" Required="true"
                         RequiredError="Please confirm your password"
-                        Validation="@(new Func<string, IEnumerable<string>>(ValidateConfirmPassword))" Class="mb-6">
+                        Validation="@(new Func<string, IEnumerable<string>>(ValidateConfirmPassword))" Class="mb-4">
+                    </MudTextField>
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>Profile Information</strong></MudText>
+
+                    <MudTextField @bind-Value="city" Label="City" Variant="Variant.Outlined" FullWidth
+                        Required="true" RequiredError="City is required" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="zipCode" Label="Zip Code" Variant="Variant.Outlined" FullWidth
+                        Required="true" RequiredError="Zip code is required" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="readingFocus" Label="Reading Focus" Variant="Variant.Outlined" FullWidth
+                        Required="true" RequiredError="Reading focus is required"
+                        HelperText="What types of comics do you enjoy?" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="description" Label="Description" Variant="Variant.Outlined" FullWidth
+                        Required="true" RequiredError="Description is required"
+                        Multiline="true" Lines="3"
+                        HelperText="Tell us about your comic interests and collecting style" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="favoriteCharacters" Label="Favorite Characters" Variant="Variant.Outlined" FullWidth
+                        Required="true" RequiredError="Favorite characters is required"
+                        HelperText="e.g., Spider-Man, Batman, Wolverine" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="biography" Label="Biography (Optional)" Variant="Variant.Outlined" FullWidth
+                        Multiline="true" Lines="3"
+                        HelperText="Share your collecting history or background" Class="mb-4">
+                    </MudTextField>
+
+                    <MudTextField @bind-Value="imageUrl" Label="Profile Image URL (Optional)" Variant="Variant.Outlined" FullWidth
+                        HelperText="Link to your profile image" Class="mb-6">
                     </MudTextField>
 
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth Size="Size.Large"
@@ -105,6 +141,13 @@
     private string email = string.Empty;
     private string password = string.Empty;
     private string confirmPassword = string.Empty;
+    private string city = string.Empty;
+    private string zipCode = string.Empty;
+    private string readingFocus = string.Empty;
+    private string description = string.Empty;
+    private string favoriteCharacters = string.Empty;
+    private string? biography;
+    private string? imageUrl;
     private bool isLoading = false;
     private bool isFormValid = false;
     private string errorMessage = string.Empty;
@@ -167,34 +210,23 @@
             email,
             username,
             fullName,
-            password);
+            password,
+            city,
+            zipCode,
+            readingFocus,
+            description,
+            favoriteCharacters,
+            biography,
+            imageUrl);
 
             if (success)
             {
-                successMessage = "Account created successfully! Logging you in...";
+                successMessage = "Account created successfully! Your account is pending admin approval and may take a couple of days. You'll be notified once approved.";
                 Logger.LogInformation($"User registered: {username}");
 
-                // Auto-login after registration
-                await Task.Delay(1000);
-                var (loginSuccess, user, loginMessage) = await AuthService.LoginAsync(email, password);
-
-                if (loginSuccess && user != null)
-                {
-                    // Save user data to localStorage
-                    await LocalStorage.SetItemAsync("currentUserId", user.Id);
-                    await LocalStorage.SetItemAsync("currentUsername", user.Username);
-                    await LocalStorage.SetItemAsync("currentEmail", user.Email);
-                    await LocalStorage.SetItemAsync("currentFullName", user.FullName);
-                    await LocalStorage.SetItemAsync("isAuthenticated", true);
-
-                    await Task.Delay(500);
-                    Navigation.NavigateTo("/");
-                }
-                else
-                {
-                    // Registration succeeded but auto-login failed, go to login page
-                    Navigation.NavigateTo("/login");
-                }
+                // Redirect to login page after delay since account needs approval
+                await Task.Delay(3000);
+                Navigation.NavigateTo("/login");
             }
             else
             {

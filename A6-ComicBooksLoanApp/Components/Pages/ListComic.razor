@@ -12,7 +12,8 @@
         <MudItem xs="12">
             <MudPaper Elevation="2" Class="pa-6">
                 <MudText Typo="Typo.h4" GutterBottom="true">Add a Comic to Your Library</MudText>
-                <MudText Typo="Typo.body2" Class="mb-6">Add a comic you're willing to lend to other members. Be honest about the condition!</MudText>
+                <MudText Typo="Typo.body2" Class="mb-6">Add a comic you're willing to lend to other members. Be honest
+                    about the condition!</MudText>
 
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
@@ -32,8 +33,8 @@
                         </MudItem>
 
                         <MudItem xs="12" sm="4">
-                            <MudNumericField @bind-Value="comic.IssueNumber" Label="Issue #"
-                                Variant="Variant.Outlined" Required="true" Min="1"></MudNumericField>
+                            <MudNumericField @bind-Value="comic.IssueNumber" Label="Issue #" Variant="Variant.Outlined"
+                                Required="true" Min="1"></MudNumericField>
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
@@ -57,18 +58,45 @@
                         </MudItem>
 
                         <MudItem xs="12">
+                            <MudSelect @bind-Value="comic.Genre" Label="Genre" Variant="Variant.Outlined"
+                                Required="true">
+                                <MudSelectItem Value="@("Superhero")">Superhero</MudSelectItem>
+                                <MudSelectItem Value="@("Horror")">Horror</MudSelectItem>
+                                <MudSelectItem Value="@("Sci-Fi")">Sci-Fi</MudSelectItem>
+                                <MudSelectItem Value="@("Fantasy")">Fantasy</MudSelectItem>
+                                <MudSelectItem Value="@("Mystery")">Mystery</MudSelectItem>
+                                <MudSelectItem Value="@("Western")">Western</MudSelectItem>
+                                <MudSelectItem Value="@("Romance")">Romance</MudSelectItem>
+                                <MudSelectItem Value="@("Crime")">Crime</MudSelectItem>
+                                <MudSelectItem Value="@("Adventure")">Adventure</MudSelectItem>
+                                <MudSelectItem Value="@("Other")">Other</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="comic.Description" Label="Description" Variant="Variant.Outlined"
+                                Required="true" Multiline="true" Lines="3"
+                                Placeholder="Provide a brief synopsis or description of this issue"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="12">
                             <MudDivider Class="my-2" />
                             <MudText Typo="Typo.subtitle1" Class="mb-2"><strong>Condition Information</strong></MudText>
-                            <MudText Typo="Typo.caption" Class="mb-3">Help borrowers know what to expect. Be honest - it builds trust!</MudText>
+                            <MudText Typo="Typo.caption" Class="mb-3">Help borrowers know what to expect. Be honest - it
+                                builds trust!</MudText>
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
-                            <MudSelect @bind-Value="comic.ConditionGrade" Label="Condition" Variant="Variant.Outlined" Required="true">
+                            <MudSelect @bind-Value="comic.ConditionGrade" Label="Condition" Variant="Variant.Outlined"
+                                Required="true">
                                 <MudSelectItem Value="@("Like New")">Like New - Pristine, barely read</MudSelectItem>
-                                <MudSelectItem Value="@("Very Good")">Very Good - Minor wear, well cared for</MudSelectItem>
+                                <MudSelectItem Value="@("Very Good")">Very Good - Minor wear, well cared for
+                                </MudSelectItem>
                                 <MudSelectItem Value="@("Good")">Good - Normal wear, fully readable</MudSelectItem>
-                                <MudSelectItem Value="@("Acceptable")">Acceptable - Visible wear but complete</MudSelectItem>
-                                <MudSelectItem Value="@("Well-Loved")">Well-Loved - Heavy wear but readable</MudSelectItem>
+                                <MudSelectItem Value="@("Acceptable")">Acceptable - Visible wear but complete
+                                </MudSelectItem>
+                                <MudSelectItem Value="@("Well-Loved")">Well-Loved - Heavy wear but readable
+                                </MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
@@ -79,9 +107,9 @@
                         </MudItem>
 
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="comic.CoverImageUrl"
-                                Label="Cover Image URL (Optional)" Variant="Variant.Outlined"
-                                HelperText="Leave blank to use default cover image"></MudTextField>
+                            <MudTextField @bind-Value="comic.CoverImageUrl" Label="Cover Image URL (Optional)"
+                                Variant="Variant.Outlined" HelperText="Leave blank to use default cover image">
+                            </MudTextField>
                         </MudItem>
 
                         <MudItem xs="12">
@@ -129,6 +157,8 @@
         public string ConditionGrade { get; set; } = "Good";
         public string ConditionDescription { get; set; } = string.Empty;
         public string Era { get; set; } = "Contemporary";
+        public string Genre { get; set; } = "Superhero";
+        public string Description { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public string? CoverImageUrl { get; set; }
     }
@@ -157,9 +187,12 @@
                     ConditionGrade = comic.ConditionGrade,
                     ConditionDescription = comic.ConditionDescription,
                     Era = comic.Era,
+                    Genre = comic.Genre,
+                    Description = comic.Description,
                     OwnerId = 1, // TODO: Get from authenticated user
                     OwnerNotes = comic.Notes,
-                    CoverImageUrl = string.IsNullOrWhiteSpace(comic.CoverImageUrl) ? "/images/comics/default-cover.svg" : comic.CoverImageUrl
+                    CoverImageUrl = string.IsNullOrWhiteSpace(comic.CoverImageUrl) ? "/images/comics/default-cover.svg" :
+                comic.CoverImageUrl
                 };
 
                 // Submit to API
@@ -167,12 +200,15 @@
 
                 if (success)
                 {
-                    successMessage = $"'{comic.Title} #{comic.IssueNumber}' added to your library! It's now available for lending.";
+                    successMessage = $"'{comic.Title} #{comic.IssueNumber}' submitted successfully! Your comic listing is pending admin approval and may take a couple of days.";
 
-                    // Reset form after 2 seconds
-                    await Task.Delay(2000);
+                    // Reset form after showing success message
+                    await Task.Delay(500);
                     comic = new();
                     await form.ResetAsync();
+
+                    // Keep success message visible for user to read
+                    await Task.Delay(5000);
                     successMessage = string.Empty;
                 }
                 else

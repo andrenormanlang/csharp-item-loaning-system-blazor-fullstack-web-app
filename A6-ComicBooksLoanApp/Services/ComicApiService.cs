@@ -195,6 +195,56 @@ namespace A6_ComicBooksLoanApp.Services
             try
             {
                 var response = await _httpClient.PostAsJsonAsync("api/comics", newComic);
+
+                // Handle validation errors (400 Bad Request) by extracting details
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    // Try to read standard ProblemDetails or ValidationProblemDetails
+                    string? detailedMessage = null;
+
+                    // Attempt to parse as ValidationProblemDetails
+                    try
+                    {
+                        var validation = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ValidationProblemDetails>();
+                        if (validation?.Errors?.Count > 0)
+                        {
+                            // Flatten validation errors into a single message
+                            var parts = validation.Errors.SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                            detailedMessage = string.Join("; ", parts);
+                        }
+                        else if (!string.IsNullOrWhiteSpace(validation?.Detail))
+                        {
+                            detailedMessage = validation.Detail;
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback to ProblemDetails or raw text
+                        try
+                        {
+                            var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+                            detailedMessage = !string.IsNullOrWhiteSpace(problem?.Detail)
+                                ? problem.Detail
+                                : problem?.Title;
+                        }
+                        catch
+                        {
+                            detailedMessage = await response.Content.ReadAsStringAsync();
+                        }
+                    }
+
+                    var message = string.IsNullOrWhiteSpace(detailedMessage)
+                        ? "Bad Request: One or more required fields are missing or invalid."
+                        : $"Bad Request: {detailedMessage}";
+
+                    // Log with details and return false so the UI can display it
+                    _logger.LogWarning("Error adding new comic to the collection: {Message}", message);
+
+                    // Optionally, throw with detailed message if the caller expects exceptions
+                    throw new HttpRequestException(message);
+                }
+
+                // For other non-success codes, keep default behavior
                 response.EnsureSuccessStatusCode();
                 return true;
             }
@@ -381,12 +431,17 @@ namespace A6_ComicBooksLoanApp.Services
         public string Publisher { get; set; } = string.Empty;
         public string Characters { get; set; } = string.Empty;
         public string Era { get; set; } = string.Empty;
+        public string Genre { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public string ConditionGrade { get; set; } = string.Empty;
+        public string ConditionDescription { get; set; } = string.Empty;
         public bool IsAvailable { get; set; }
         public bool IsOnLoan { get; set; }
         public DateTime? LoanReturnDate { get; set; }
+        public DateTime PublicationDate { get; set; }
         public int OwnerId { get; set; }
         public string OwnerUsername { get; set; } = string.Empty;
+        public string? OwnerNotes { get; set; }
         public string? CoverImageUrl { get; set; }
         public bool IsKeyIssue { get; set; }
         public bool IsProfessionallyGraded { get; set; }
@@ -406,6 +461,8 @@ namespace A6_ComicBooksLoanApp.Services
         public string ConditionGrade { get; set; } = string.Empty;
         public string ConditionDescription { get; set; } = string.Empty;
         public string Era { get; set; } = string.Empty;
+        public string Genre { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public int OwnerId { get; set; }
         public string? OwnerNotes { get; set; }
         public string? CoverImageUrl { get; set; }

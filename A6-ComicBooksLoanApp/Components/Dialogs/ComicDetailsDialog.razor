@@ -1,0 +1,106 @@
+@using A6_ComicBooksLoanApp.Services
+@using static A6_ComicBooksLoanApp.Services.ComicApiService
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        @if (Comic is not null)
+        {
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3" Class="mb-4">
+                        @if (!string.IsNullOrEmpty(Comic.CoverImageUrl))
+                        {
+                            <MudImage Src="@Comic.CoverImageUrl" Alt="@Comic.Title" Width="100" Height="150"
+                                ObjectFit="ObjectFit.Cover" Class="rounded" />
+                        }
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.h5">@Comic.Title</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Issue #@Comic.IssueNumber</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">@Comic.Era</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@Comic.Genre</MudChip>
+                        </MudStack>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Owner</MudText>
+                    <MudText Typo="Typo.body2">@Comic.OwnerUsername</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Publisher</MudText>
+                    <MudText Typo="Typo.body2">@Comic.Publisher</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Era</MudText>
+                    <MudText Typo="Typo.body2">@Comic.Era</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Genre</MudText>
+                    <MudText Typo="Typo.body2">@Comic.Genre</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Condition Grade</MudText>
+                    <MudText Typo="Typo.body2">@Comic.ConditionGrade</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Publication Date</MudText>
+                    <MudText Typo="Typo.body2">@Comic.PublicationDate.ToString("MMM dd, yyyy")</MudText>
+                </MudItem>
+
+                @if (!string.IsNullOrWhiteSpace(Comic.ConditionDescription))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Condition Description</MudText>
+                        <MudText Typo="Typo.body2">@Comic.ConditionDescription</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Comic.Description))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Description</MudText>
+                        <MudText Typo="Typo.body2">@Comic.Description</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Comic.OwnerNotes))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Owner Notes</MudText>
+                        <MudText Typo="Typo.body2">@Comic.OwnerNotes</MudText>
+                    </MudItem>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Comic.Characters))
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Characters</MudText>
+                        <MudText Typo="Typo.body2">@Comic.Characters</MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public AdminApiService.ComicDto? Comic { get; set; }
+
+    void Close() => MudDialog?.Close(DialogResult.Ok(true));
+}

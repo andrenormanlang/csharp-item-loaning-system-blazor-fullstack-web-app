@@ -182,6 +182,25 @@ namespace ComicBooksLoanAppAPI.Data
                     IsVerified = true,
                     ImageUrl = "https://i.pravatar.cc/150?img=51",
                     PasswordHash = HashPassword("Comics123!")
+                },
+                new User
+                {
+                    Id = 7,
+                    Username = "alt_manga_maven",
+                    FullName = "Sofia Bergström",
+                    Email = "sofia.b@example.com",
+                    City = "Malmö",
+                    ZipCode = "211 25",
+                    ReadingFocus = "Alternative Manga, Gekiga, Experimental Japanese Comics",
+                    Description = "Collector of obscure and alternative manga from the 60s-90s. Specializing in gekiga and avant-garde works.",
+                    FavoriteCharacters = "Onoda (Red Snow), Tatsumi's protagonists, Tsuge's wanderers",
+                    Biography = "Swedish manga enthusiast fascinated by Japan's alternative comics scene. Spent years hunting down rare gekiga and experimental works that never got mainstream attention. Prefer gritty, artistic manga over shonen. Happy to meet anywhere in Malmö city center or Limhamn.",
+                    SuccessfulLoans = 18,
+                    AverageRating = 4.9m,
+                    MemberSince = new DateTime(2023, 8, 5),
+                    IsVerified = true,
+                    ImageUrl = "https://i.pravatar.cc/150?img=32",
+                    PasswordHash = HashPassword("Manga456!")
                 }
             };
 
@@ -814,7 +833,128 @@ namespace ComicBooksLoanAppAPI.Data
                     DateListed = new DateTime(2025, 1, 20, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Marvel goes mature. Beautiful magazine-format anthology.",
                     CoverImageUrl = "https://static.wikia.nocookie.net/marveldatabase/images/3/3e/Epic_Illustrated_Vol_1_1.jpg"
+                },
+
+                // ========================================
+                // JAPANESE ALTERNATIVE COMICS - Sofias's Collection
+                // ========================================
+                new Comic
+                {
+                    Id = 31,
+                    Title = "Red Snow",
+                    IssueNumber = 1,
+                    PublicationDate = new DateTime(1971, 6, 15),
+                    Publisher = "Garo Magazine",
+                    Characters = "Onoda, Various soldiers",
+                    Era = "Gekiga Era",
+                    Genre = "War/Drama/Gekiga",
+                    ConditionGrade = "Fine",
+                    ConditionDescription = "Rare gekiga work. Some edge wear, pages intact.",
+                    Description = "Susumu Katsumata's haunting anti-war gekiga following a Japanese soldier's descent into madness during WWII. Raw and unflinching.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 22, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "Incredibly rare. One of the most powerful anti-war manga ever created.",
+                    CoverImageUrl = "https://example.com/red-snow-cover.jpg"
+                },
+                new Comic
+                {
+                    Id = 32,
+                    Title = "Nejishiki (Screw Style)",
+                    IssueNumber = 1,
+                    PublicationDate = new DateTime(1968, 6, 1),
+                    Publisher = "Garo Magazine",
+                    Characters = "Unnamed protagonist",
+                    Era = "Gekiga Era",
+                    Genre = "Surreal/Experimental/Gekiga",
+                    ConditionGrade = "Very Good",
+                    ConditionDescription = "Classic experimental manga. Minor yellowing.",
+                    Description = "Yoshiharu Tsuge's surrealist masterpiece. A fever dream journey through memory and landscape. Defined alternative manga.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 22, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "The manga that changed everything. Influenced generations of alt manga artists.",
+                    CoverImageUrl = "https://example.com/nejishiki-cover.jpg"
+                },
+
+                new Comic
+                {
+                    Id = 33,
+                    Title = "Hell Baby",
+                    IssueNumber = 2,
+                    PublicationDate = new DateTime(1980, 3, 1),
+                    Publisher = "Young Jump",
+                    Characters = "Tatsuo, Hell Baby",
+                    Era = "Modern Gekiga",
+                    Genre = "Horror/Dark Comedy/Gekiga",
+                    ConditionGrade = "Very Fine",
+                    ConditionDescription = "Shocking horror-comedy. Excellent condition.",
+                    Description = "Hideshi Hino's grotesque tale of a family adopting a demonic infant. Disturbing, darkly funny, and beautifully illustrated.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 23, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "Hino at his most transgressive. Not for the squeamish.",
+                    CoverImageUrl = "https://example.com/hell-baby-cover.jpg"
+                },
+
+                new Comic
+                {
+                    Id = 34,
+                    Title = "Kiichi!! vs.",
+                    IssueNumber = 5,
+                    PublicationDate = new DateTime(1999, 7, 1),
+                    Publisher = "Young Animal",
+                    Characters = "Kiichi Miyazawa",
+                    Era = "Modern",
+                    Genre = "Martial Arts/Drama/Alt",
+                    ConditionGrade = "Near Mint",
+                    ConditionDescription = "Underrated martial arts manga. Perfect condition.",
+                    Description = "Hideki Arai's brutal and realistic martial arts saga. A young fighter's journey through Japan's underground fighting world.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 23, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "Criminally underrated. Best realistic martial arts manga nobody talks about.",
+                    CoverImageUrl = "https://example.com/kiichi-cover.jpg"
+                },
+                new Comic
+                {
+                    Id = 35,
+                    Title = "Tekkonkinkreet (Black & White)",
+                    IssueNumber = 3,
+                    PublicationDate = new DateTime(1994, 5, 1),
+                    Publisher = "Big Comic Spirits",
+                    Characters = "Kuro (Black), Shiro (White)",
+                    Era = "Modern",
+                    Genre = "Urban Fantasy/Drama/Art",
+                    ConditionGrade = "Fine",
+                    ConditionDescription = "Artistic masterpiece. Light wear on spine.",
+                    Description = "Taiyo Matsumoto's stunning tale of two orphan street kids in surreal Treasure Town. Revolutionary art style.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 24, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "Before the anime. Matsumoto's breakthrough work with incredible visual storytelling.",
+                    CoverImageUrl = "https://example.com/tekkonkinkreet-cover.jpg"
+                },
+                new Comic
+                {
+                    Id = 36,
+                    Title = "Domu: A Child's Dream",
+                    IssueNumber = 1,
+                    PublicationDate = new DateTime(1983, 1, 1),
+                    Publisher = "Action Deluxe",
+                    Characters = "Etsuko Yamauchi, The Old Man",
+                    Era = "Modern",
+                    Genre = "Horror/Psychological/Thriller",
+                    ConditionGrade = "Very Fine",
+                    ConditionDescription = "Pre-Akira Otomo masterpiece. Great condition.",
+                    Description = "Katsuhiro Otomo's psychic horror thriller set in a housing complex. Won multiple awards. Dark and atmospheric.",
+                    OwnerId = 7,
+                    IsAvailable = true,
+                    DateListed = new DateTime(2025, 1, 24, 0, 0, 0, DateTimeKind.Utc),
+                    OwnerNotes = "Otomo's best work besides Akira. Tense psychological horror.",
+                    CoverImageUrl = "https://example.com/domu-cover.jpg"
                 }
+
             };
 
             // Set approval defaults for seeded comics

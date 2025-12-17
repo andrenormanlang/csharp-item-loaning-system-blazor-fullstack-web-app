@@ -4,6 +4,7 @@
 @inject IDialogService DialogService
 @using A6_ComicBooksLoanApp.Services
 @using static A6_ComicBooksLoanApp.Services.AdminApiService
+@using A6_ComicBooksLoanApp.Components.Dialogs
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <MudText Typo="Typo.h4" Class="mb-4">
@@ -24,7 +25,8 @@
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">Pending Users</MudText>
                                     <MudText Typo="Typo.h4">@(pendingUsers?.Count ?? 0)</MudText>
                                 </MudStack>
-                                <MudIcon Icon="@Icons.Material.Filled.PendingActions" Size="Size.Large" Color="Color.Warning" />
+                                <MudIcon Icon="@Icons.Material.Filled.PendingActions" Size="Size.Large"
+                                    Color="Color.Warning" />
                             </MudStack>
                         </MudCardContent>
                     </MudCard>
@@ -70,34 +72,53 @@
                                     <MudTh>Full Name</MudTh>
                                     <MudTh>Username</MudTh>
                                     <MudTh>Email</MudTh>
-                                    <MudTh>Member Since</MudTh>
+                                    <MudTh>City</MudTh>
+                                    <MudTh>Zip Code</MudTh>
+                                    @* <MudTh>Member Since</MudTh> *@
                                     <MudTh Style="text-align: right;">Actions</MudTh>
                                 </HeaderContent>
                                 <RowTemplate>
                                     <MudTd DataLabel="Full Name">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                            <MudAvatar Color="Color.Secondary" Size="Size.Small">
-                                                @context.FullName.First()
-                                            </MudAvatar>
+                                            @if (!string.IsNullOrEmpty(context.ImageUrl))
+                                            {
+                                                <MudAvatar Size="Size.Small">
+                                                    <MudImage Src="@context.ImageUrl" Alt="@context.FullName" />
+                                                </MudAvatar>
+                                            }
+                                            else
+                                            {
+                                                <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                                                    @context.FullName.First()
+                                                </MudAvatar>
+                                            }
                                             <MudText>@context.FullName</MudText>
                                         </MudStack>
                                     </MudTd>
                                     <MudTd DataLabel="Username">@context.Username</MudTd>
                                     <MudTd DataLabel="Email">@context.Email</MudTd>
-                                    <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM dd, yyyy")</MudTd>
+                                    <MudTd DataLabel="City">@context.City</MudTd>
+                                    <MudTd DataLabel="Zip Code">@context.ZipCode</MudTd>
+                                    @* <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM dd, yyyy")</MudTd> *@
                                     <MudTd DataLabel="Actions" Style="text-align: right;">
                                         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+                                            <MudTooltip Text="View Details">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Info" Color="Color.Info"
+                                                    Size="Size.Small" OnClick="@(() => ShowUserDetails(context))" />
+                                            </MudTooltip>
                                             <MudTooltip Text="Approve User">
-                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
-                                                             Color="Color.Success" 
-                                                             Size="Size.Small"
-                                                             OnClick="@(() => ApproveUser(context.Id))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                    Color="Color.Success" Size="Size.Small"
+                                                    OnClick="@(() => ApproveUser(context.Id))" />
                                             </MudTooltip>
                                             <MudTooltip Text="Reject User">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
-                                                             Color="Color.Error" 
-                                                             Size="Size.Small"
-                                                             OnClick="@(() => RejectUser(context.Id))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                                    Size="Size.Small" OnClick="@(() => RejectUser(context.Id))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Delete User">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                    Size="Size.Small"
+                                                    OnClick="@(() => DeletePendingUserWithConfirmation(context.Id, context.Username))" />
                                             </MudTooltip>
                                         </MudStack>
                                     </MudTd>
@@ -132,8 +153,10 @@
                                 <HeaderContent>
                                     <MudTh>Title</MudTh>
                                     <MudTh>Issue</MudTh>
+                                    <MudTh>Owner</MudTh>
                                     <MudTh>Publisher</MudTh>
                                     <MudTh>Era</MudTh>
+                                    <MudTh>Genre</MudTh>
                                     <MudTh>Condition</MudTh>
                                     <MudTh Style="text-align: right;">Actions</MudTh>
                                 </HeaderContent>
@@ -142,10 +165,17 @@
                                         <MudText Typo="Typo.body2"><strong>@context.Title</strong></MudText>
                                     </MudTd>
                                     <MudTd DataLabel="Issue">#@context.IssueNumber</MudTd>
+                                    <MudTd DataLabel="Owner">@context.OwnerUsername</MudTd>
                                     <MudTd DataLabel="Publisher">@context.Publisher</MudTd>
                                     <MudTd DataLabel="Era">
                                         <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
                                             @context.Era
+                                        </MudChip>
+                                    </MudTd>
+                                    <MudTd DataLabel="Genre">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                                            Variant="Variant.Text">
+                                            @context.Genre
                                         </MudChip>
                                     </MudTd>
                                     <MudTd DataLabel="Condition">
@@ -155,17 +185,23 @@
                                     </MudTd>
                                     <MudTd DataLabel="Actions" Style="text-align: right;">
                                         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+                                            <MudTooltip Text="View Details">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Info" Color="Color.Info"
+                                                    Size="Size.Small" OnClick="@(() => ShowComicDetails(context))" />
+                                            </MudTooltip>
                                             <MudTooltip Text="Approve Comic">
-                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
-                                                             Color="Color.Success" 
-                                                             Size="Size.Small"
-                                                             OnClick="@(() => ApproveComic(context.Id))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                    Color="Color.Success" Size="Size.Small"
+                                                    OnClick="@(() => ApproveComic(context.Id))" />
                                             </MudTooltip>
                                             <MudTooltip Text="Reject Comic">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" 
-                                                             Color="Color.Error" 
-                                                             Size="Size.Small"
-                                                             OnClick="@(() => RejectComic(context.Id))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                                    Size="Size.Small" OnClick="@(() => RejectComic(context.Id))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="Delete Comic">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                    Size="Size.Small"
+                                                    OnClick="@(() => DeletePendingComicWithConfirmation(context.Id, context.Title))" />
                                             </MudTooltip>
                                         </MudStack>
                                     </MudTd>
@@ -196,10 +232,12 @@
                 }
                 else
                 {
-                    <MudTable Items="@allUsers" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Filter="new Func<AdminUserDto,bool>(FilterUserFunc)">
+                    <MudTable Items="@allUsers" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true"
+                        Filter="new Func<AdminUserDto, bool>(FilterUserFunc)">
                         <ToolBarContent>
-                            <MudTextField @bind-Value="userSearchString" Placeholder="Search users..." Adornment="Adornment.Start" 
-                                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                            <MudTextField @bind-Value="userSearchString" Placeholder="Search users..."
+                                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                IconSize="Size.Medium" Class="mt-0"></MudTextField>
                         </ToolBarContent>
                         <HeaderContent>
                             <MudTh>User</MudTh>
@@ -223,25 +261,24 @@
                             </MudTd>
                             <MudTd DataLabel="Email">@context.Email</MudTd>
                             <MudTd DataLabel="City">@context.City</MudTd>
-                            <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM yyyy")</MudTd>
+                            @* <MudTd DataLabel="Member Since">@context.MemberSince.ToString("MMM yyyy")</MudTd> *@
                             <MudTd DataLabel="Rating">
-                                <MudRating SelectedValue="@((int)context.AverageRating)" ReadOnly="true" Size="Size.Small" />
+                                <MudRating SelectedValue="@((int)context.AverageRating)" ReadOnly="true"
+                                    Size="Size.Small" />
                             </MudTd>
                             <MudTd DataLabel="Loans">@context.SuccessfulLoans</MudTd>
                             <MudTd DataLabel="Comics">@context.ComicsCount</MudTd>
                             <MudTd DataLabel="Actions" Style="text-align: right;">
                                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
                                     <MudTooltip Text="Block User">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Block" 
-                                                     Color="Color.Warning" 
-                                                     Size="Size.Small"
-                                                     OnClick="@(() => BlockUserWithConfirmation(context.Id, context.Username))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Block" Color="Color.Warning"
+                                            Size="Size.Small"
+                                            OnClick="@(() => BlockUserWithConfirmation(context.Id, context.Username))" />
                                     </MudTooltip>
                                     <MudTooltip Text="Delete User">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                                     Color="Color.Error" 
-                                                     Size="Size.Small"
-                                                     OnClick="@(() => DeleteUserWithConfirmation(context.Id, context.Username))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                            Size="Size.Small"
+                                            OnClick="@(() => DeleteUserWithConfirmation(context.Id, context.Username))" />
                                     </MudTooltip>
                                 </MudStack>
                             </MudTd>
@@ -270,10 +307,12 @@
                 }
                 else
                 {
-                    <MudTable Items="@allComics" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Filter="new Func<ComicDto,bool>(FilterComicFunc)">
+                    <MudTable Items="@allComics" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true"
+                        Filter="new Func<AdminApiService.ComicDto, bool>(FilterComicFunc)">
                         <ToolBarContent>
-                            <MudTextField @bind-Value="comicSearchString" Placeholder="Search comics..." Adornment="Adornment.Start" 
-                                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                            <MudTextField @bind-Value="comicSearchString" Placeholder="Search comics..."
+                                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                IconSize="Size.Medium" Class="mt-0"></MudTextField>
                         </ToolBarContent>
                         <HeaderContent>
                             <MudTh>Title</MudTh>
@@ -302,27 +341,27 @@
                             <MudTd DataLabel="Visibility">
                                 @if (context.IsAvailable)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Visibility">Visible</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                                        Icon="@Icons.Material.Filled.Visibility">Visible</MudChip>
                                 }
                                 else
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Icon="@Icons.Material.Filled.VisibilityOff">Hidden</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                                        Icon="@Icons.Material.Filled.VisibilityOff">Hidden</MudChip>
                                 }
                             </MudTd>
                             <MudTd DataLabel="Actions" Style="text-align: right;">
                                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
                                     <MudTooltip Text="@(context.IsAvailable ? "Hide Comic" : "Show Comic")">
-                                        <MudIconButton Icon="@(context.IsAvailable ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)" 
-                                                     Color="Color.Info" 
-                                                     Size="Size.Small"
-                                                     Disabled="@context.IsOnLoan"
-                                                     OnClick="@(() => ToggleComicVisibility(context.Id))" />
+                                        <MudIconButton
+                                            Icon="@(context.IsAvailable ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                            Color="Color.Info" Size="Size.Small" Disabled="@context.IsOnLoan"
+                                            OnClick="@(() => ToggleComicVisibility(context.Id))" />
                                     </MudTooltip>
                                     <MudTooltip Text="Delete Comic">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                                     Color="Color.Error" 
-                                                     Size="Size.Small"
-                                                     OnClick="@(() => DeleteComicWithConfirmation(context.Id, context.Title))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                            Size="Size.Small"
+                                            OnClick="@(() => DeleteComicWithConfirmation(context.Id, context.Title))" />
                                     </MudTooltip>
                                 </MudStack>
                             </MudTd>
@@ -335,11 +374,11 @@
 </MudContainer>
 
 @code {
-    List<UserDto>? pendingUsers;
-    List<ComicDto>? pendingComics;
-    List<AdminUserDto>? allUsers;
-    List<ComicDto>? allComics;
-    
+    List<AdminApiService.UserDto>? pendingUsers;
+    List<AdminApiService.ComicDto>? pendingComics;
+    List<AdminApiService.AdminUserDto>? allUsers;
+    List<AdminApiService.ComicDto>? allComics;
+
     string userSearchString = "";
     string comicSearchString = "";
 
@@ -351,10 +390,10 @@
     private async Task LoadAllData()
     {
         await Task.WhenAll(
-            LoadPendingUsers(),
-            LoadPendingComics(),
-            LoadAllUsers(),
-            LoadAllComics()
+        LoadPendingUsers(),
+        LoadPendingComics(),
+        LoadAllUsers(),
+        LoadAllComics()
         );
     }
 
@@ -407,6 +446,28 @@
         }
     }
 
+    private async Task DeletePendingUserWithConfirmation(int userId, string username)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+        "Delete Pending User",
+        $"Are you sure you want to permanently delete pending user '{username}'? This cannot be undone.",
+        yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            if (await AdminApi.DeletePendingUserAsync(userId))
+            {
+                pendingUsers = pendingUsers?.Where(u => u.Id != userId).ToList();
+                Snackbar.Add($"Pending user '{username}' deleted.", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete pending user.", Severity.Error);
+            }
+        }
+    }
+
     // Pending Comics Actions
     private async Task ApproveComic(int id)
     {
@@ -436,14 +497,36 @@
         }
     }
 
+    private async Task DeletePendingComicWithConfirmation(int comicId, string title)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+        "Delete Pending Comic",
+        $"Are you sure you want to permanently delete '{title}'? This cannot be undone.",
+        yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            if (await AdminApi.DeletePendingComicAsync(comicId))
+            {
+                pendingComics = pendingComics?.Where(c => c.Id != comicId).ToList();
+                Snackbar.Add($"Pending comic '{title}' deleted.", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete pending comic.", Severity.Error);
+            }
+        }
+    }
+
     // User Management Actions
     private async Task BlockUserWithConfirmation(int userId, string username)
     {
         bool? result = await DialogService.ShowMessageBox(
-            "Block User",
-            $"Are you sure you want to block user '{username}'? They will no longer be able to access the platform.",
-            yesText: "Block", cancelText: "Cancel");
-        
+        "Block User",
+        $"Are you sure you want to block user '{username}'? They will no longer be able to access the platform.",
+        yesText: "Block", cancelText: "Cancel");
+
         if (result == true)
         {
             if (await AdminApi.BlockUserAsync(userId))
@@ -462,10 +545,10 @@
     private async Task DeleteUserWithConfirmation(int userId, string username)
     {
         bool? result = await DialogService.ShowMessageBox(
-            "Delete User",
-            $"Are you sure you want to permanently delete user '{username}'? This action cannot be undone and will remove all their data.",
-            yesText: "Delete", cancelText: "Cancel");
-        
+        "Delete User",
+        $"Are you sure you want to permanently delete user '{username}'? This action cannot be undone and will remove all their data.",
+        yesText: "Delete", cancelText: "Cancel");
+
         if (result == true)
         {
             if (await AdminApi.DeleteUserAsync(userId))
@@ -504,10 +587,10 @@
     private async Task DeleteComicWithConfirmation(int comicId, string title)
     {
         bool? result = await DialogService.ShowMessageBox(
-            "Delete Comic",
-            $"Are you sure you want to permanently delete '{title}'? This action cannot be undone.",
-            yesText: "Delete", cancelText: "Cancel");
-        
+        "Delete Comic",
+        $"Are you sure you want to permanently delete '{title}'? This action cannot be undone.",
+        yesText: "Delete", cancelText: "Cancel");
+
         if (result == true)
         {
             if (await AdminApi.DeleteComicAsync(comicId))
@@ -539,7 +622,7 @@
         return false;
     }
 
-    private bool FilterComicFunc(ComicDto comic)
+    private bool FilterComicFunc(AdminApiService.ComicDto comic)
     {
         if (string.IsNullOrWhiteSpace(comicSearchString))
             return true;
@@ -548,5 +631,28 @@
         if (comic.Publisher.Contains(comicSearchString, StringComparison.OrdinalIgnoreCase))
             return true;
         return false;
+    }
+
+    // Detail Dialogs
+    private async Task ShowUserDetails(AdminApiService.UserDto user)
+    {
+        var parameters = new DialogParameters
+{
+{ "User", user }
+};
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<UserDetailsDialog>("User Details", parameters, options);
+    }
+
+    private async Task ShowComicDetails(AdminApiService.ComicDto comic)
+    {
+        var parameters = new DialogParameters
+{
+{ "Comic", comic }
+};
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<ComicDetailsDialog>("Comic Details", parameters, options);
     }
 }

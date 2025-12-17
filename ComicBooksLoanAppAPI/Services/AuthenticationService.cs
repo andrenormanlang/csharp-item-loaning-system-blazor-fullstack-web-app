@@ -24,7 +24,18 @@ namespace ComicBooksLoanAppAPI.Services
         /// <summary>
         /// Registers a new user with email and password.
         /// </summary>
-        public async Task<(bool Success, string Message)> RegisterAsync(string email, string username, string fullName, string password)
+        public async Task<(bool Success, string Message)> RegisterAsync(
+            string email,
+            string username,
+            string fullName,
+            string password,
+            string city,
+            string zipCode,
+            string readingFocus,
+            string description,
+            string favoriteCharacters,
+            string? biography,
+            string? imageUrl)
         {
             try
             {
@@ -40,6 +51,21 @@ namespace ComicBooksLoanAppAPI.Services
 
                 if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
                     return (false, "Password must be at least 6 characters.");
+
+                if (string.IsNullOrWhiteSpace(city))
+                    return (false, "City is required.");
+
+                if (string.IsNullOrWhiteSpace(zipCode))
+                    return (false, "Zip code is required.");
+
+                if (string.IsNullOrWhiteSpace(readingFocus))
+                    return (false, "Reading focus is required.");
+
+                if (string.IsNullOrWhiteSpace(description))
+                    return (false, "Description is required.");
+
+                if (string.IsNullOrWhiteSpace(favoriteCharacters))
+                    return (false, "Favorite characters is required.");
 
                 // Check if email already exists
                 var existingEmailUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -58,11 +84,17 @@ namespace ComicBooksLoanAppAPI.Services
                     Username = username,
                     FullName = fullName,
                     PasswordHash = HashPassword(password),
+                    City = city,
+                    ZipCode = zipCode,
+                    ReadingFocus = readingFocus,
+                    Description = description,
+                    FavoriteCharacters = favoriteCharacters,
+                    Biography = biography,
+                    ImageUrl = imageUrl,
                     MemberSince = DateTime.UtcNow,
                     IsVerified = false,
                     ApprovalStatus = ApprovalStatus.Pending,
                     Role = "User",
-                    Description = "Comic enthusiast",
                     AverageRating = 0,
                     SuccessfulLoans = 0
                 };

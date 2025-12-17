@@ -164,6 +164,31 @@ namespace ComicBooksLoanAppAPI.Models.DTOs
         public string FullName { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the email address.
+        /// </summary>
+        public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the city.
+        /// </summary>
+        public string City { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the zip code.
+        /// </summary>
+        public string ZipCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the reading focus.
+        /// </summary>
+        public string ReadingFocus { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the collecting focus area.
         /// </summary>
         public string CollectingFocus { get; set; } = string.Empty;
@@ -182,6 +207,11 @@ namespace ComicBooksLoanAppAPI.Models.DTOs
         /// Gets or sets the user's biography.
         /// </summary>
         public string? Biography { get; set; }
+
+        /// <summary>
+        /// Gets or sets the image URL.
+        /// </summary>
+        public string? ImageUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the successful loans count.

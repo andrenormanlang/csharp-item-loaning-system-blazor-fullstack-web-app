@@ -82,6 +82,19 @@ namespace ComicBooksLoanAppAPI.Models.DTOs
         public string Era { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the genre of the comic.
+        /// </summary>
+        [Required(ErrorMessage = "Genre is required.")]
+        [StringLength(100, ErrorMessage = "Genre cannot exceed 100 characters.")]
+        public string Genre { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the description or synopsis of the comic.
+        /// </summary>
+        [StringLength(2000, ErrorMessage = "Description cannot exceed 2000 characters.")]
+        public string? Description { get; set; }
+
+        /// <summary>
         /// Gets or sets whether this is a key issue.
         /// </summary>
         public bool IsKeyIssue { get; set; }
@@ -172,6 +185,16 @@ namespace ComicBooksLoanAppAPI.Models.DTOs
         /// Gets or sets the comic era.
         /// </summary>
         public string Era { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the genre of the comic.
+        /// </summary>
+        public string Genre { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the description or synopsis of the comic.
+        /// </summary>
+        public string? Description { get; set; }
 
         /// <summary>
         /// Gets or sets whether this is a key issue.

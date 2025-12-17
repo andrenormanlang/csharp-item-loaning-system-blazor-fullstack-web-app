@@ -35,6 +35,12 @@ namespace A6_ComicBooksLoanApp.Services
             catch (HttpRequestException ex) { _logger.LogError(ex, "Error rejecting user"); return false; }
         }
 
+        public async Task<bool> DeletePendingUserAsync(int userId)
+        {
+            try { var res = await _httpClient.DeleteAsync($"api/admin/pending-users/{userId}"); return res.IsSuccessStatusCode; }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error deleting pending user"); return false; }
+        }
+
         // All Users Management
         public async Task<List<AdminUserDto>> GetAllUsersAsync()
         {
@@ -71,6 +77,12 @@ namespace A6_ComicBooksLoanApp.Services
         {
             try { var res = await _httpClient.PostAsync($"api/admin/comics/{comicId}/reject", null); return res.IsSuccessStatusCode; }
             catch (HttpRequestException ex) { _logger.LogError(ex, "Error rejecting comic"); return false; }
+        }
+
+        public async Task<bool> DeletePendingComicAsync(int comicId)
+        {
+            try { var res = await _httpClient.DeleteAsync($"api/admin/pending-comics/{comicId}"); return res.IsSuccessStatusCode; }
+            catch (HttpRequestException ex) { _logger.LogError(ex, "Error deleting pending comic"); return false; }
         }
 
         // All Comics Management
@@ -147,6 +159,44 @@ namespace A6_ComicBooksLoanApp.Services
         private class ToggleVisibilityResponse
         {
             public bool IsAvailable { get; set; }
+        }
+
+        public class UserDto
+        {
+            public int Id { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string City { get; set; } = string.Empty;
+            public string ZipCode { get; set; } = string.Empty;
+            public string ReadingFocus { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string FavoriteCharacters { get; set; } = string.Empty;
+            public string? Biography { get; set; }
+            public string? ImageUrl { get; set; }
+            public DateTime MemberSince { get; set; }
+            public bool IsVerified { get; set; }
+        }
+
+        public class ComicDto
+        {
+            public int Id { get; set; }
+            public string Title { get; set; } = string.Empty;
+            public int IssueNumber { get; set; }
+            public string Publisher { get; set; } = string.Empty;
+            public string Characters { get; set; } = string.Empty;
+            public string Era { get; set; } = string.Empty;
+            public string Genre { get; set; } = string.Empty;
+            public string? Description { get; set; }
+            public string ConditionGrade { get; set; } = string.Empty;
+            public string ConditionDescription { get; set; } = string.Empty;
+            public DateTime PublicationDate { get; set; }
+            public int OwnerId { get; set; }
+            public string OwnerUsername { get; set; } = string.Empty;
+            public string? OwnerNotes { get; set; }
+            public string? CoverImageUrl { get; set; }
+            public bool IsAvailable { get; set; }
+            public bool IsOnLoan { get; set; }
         }
 
         public class AdminUserDto

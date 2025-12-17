@@ -120,6 +120,21 @@ namespace ComicBooksLoanAppAPI.Controllers
         }
 
         /// <summary>
+        /// Permanently deletes a pending user (hard delete).
+        /// </summary>
+        [HttpDelete("pending-users/{id}")]
+        public async Task<IActionResult> DeletePendingUser([FromRoute] int id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.ApprovalStatus == Models.ApprovalStatus.Pending);
+            if (user == null) return NotFound();
+            if (user.Role == "Admin") return BadRequest(new { message = "Cannot delete admin users." });
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Pending user deleted." });
+        }
+
+        /// <summary>
         /// Lists comics pending approval.
         /// </summary>
         [HttpGet("pending-comics")]
@@ -129,6 +144,26 @@ namespace ComicBooksLoanAppAPI.Controllers
                 .Where(c => c.ApprovalStatus == Models.ApprovalStatus.Pending)
                 .Include(c => c.Owner)
                 .OrderByDescending(c => c.DateListed)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Title,
+                    c.IssueNumber,
+                    c.Publisher,
+                    c.Characters,
+                    c.Era,
+                    c.Genre,
+                    Description = c.Description,
+                    c.ConditionGrade,
+                    c.ConditionDescription,
+                    c.PublicationDate,
+                    c.OwnerId,
+                    OwnerUsername = c.Owner != null ? c.Owner.Username : "Unknown",
+                    OwnerNotes = c.OwnerNotes,
+                    CoverImageUrl = c.CoverImageUrl,
+                    c.IsAvailable,
+                    c.IsOnLoan
+                })
                 .ToListAsync();
             return Ok(comics);
         }
@@ -157,6 +192,20 @@ namespace ComicBooksLoanAppAPI.Controllers
             comic.ApprovalStatus = Models.ApprovalStatus.Rejected;
             await _context.SaveChangesAsync();
             return Ok(new { message = "Comic rejected." });
+        }
+
+        /// <summary>
+        /// Permanently deletes a pending comic (hard delete).
+        /// </summary>
+        [HttpDelete("pending-comics/{id}")]
+        public async Task<IActionResult> DeletePendingComic([FromRoute] int id)
+        {
+            var comic = await _context.Comics.FirstOrDefaultAsync(c => c.Id == id && c.ApprovalStatus == Models.ApprovalStatus.Pending);
+            if (comic == null) return NotFound();
+
+            _context.Comics.Remove(comic);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Pending comic deleted." });
         }
 
         /// <summary>
