@@ -196,9 +196,9 @@
                 };
 
                 // Submit to API
-                bool success = await ComicService.AddComicAsync(createComicDto);
+                var result = await ComicService.AddComicAsync(createComicDto);
 
-                if (success)
+                if (result.Success)
                 {
                     successMessage = $"'{comic.Title} #{comic.IssueNumber}' submitted successfully! Your comic listing is pending admin approval and may take a couple of days.";
 
@@ -213,7 +213,9 @@
                 }
                 else
                 {
-                    errorMessage = "Failed to add comic. Please try again.";
+                    errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Failed to add comic. Please try again."
+                    : result.ErrorMessage;
                 }
             }
             catch (Exception ex)

@@ -49,11 +49,28 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Migrate database on startup
+// Create database (if missing) and seed data (if empty) on startup
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<comicbooksloanDbContext>();
-    context.Database.Migrate();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
+
+    try
+    {
+        var context = services.GetRequiredService<comicbooksloanDbContext>();
+
+        // Best practice: use EF Core migrations for schema creation/updates.
+        // This will create the database if missing and apply any pending migrations.
+        await context.Database.MigrateAsync();
+
+        // If the DB exists but has no data, populate it from the current DatabaseSeeder.
+        await DatabaseSeeder.SeedDatabaseIfEmptyAsync(context, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database initialization failed");
+        throw;
+    }
 }
 
 // Configure the HTTP request pipeline.

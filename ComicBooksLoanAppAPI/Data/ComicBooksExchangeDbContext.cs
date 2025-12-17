@@ -203,8 +203,8 @@ namespace ComicBooksLoanAppAPI.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Seed the database
-            DatabaseSeeder.SeedDatabase(modelBuilder);
+            // Note: Seed data is applied at runtime (see Program.cs) so that large seed datasets
+            // don't get baked into migrations.
         }
     }
 }

@@ -1,5 +1,7 @@
 using ComicBooksLoanAppAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Logging;
 
 namespace ComicBooksLoanAppAPI.Data
 {
@@ -13,6 +15,116 @@ namespace ComicBooksLoanAppAPI.Data
     /// </summary>
     public static class DatabaseSeeder
     {
+        /// <summary>
+        /// Seeds the database with initial data at runtime if the database is currently empty.
+        /// This is intended for first-run/dev scenarios where no migrations-based seeding is present.
+        /// </summary>
+        public static async Task SeedDatabaseIfEmptyAsync(comicbooksloanDbContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
+            // Treat "no users" as "empty database" for this app.
+            if (await context.Users.AsNoTracking().AnyAsync(cancellationToken))
+            {
+                return;
+            }
+
+            logger?.LogInformation("Database is empty; seeding initial data...");
+
+            // Build seed data using the same curated dataset used for model seeding.
+            var users = GetSampleUsers();
+            var comics = GetSampleComics();
+
+            var pastLoans = GetPastLoans();
+            var futureLoans = GetOngoingLoans(pastLoans.Count + 1);
+
+            foreach (var loan in futureLoans)
+            {
+                if (loan.Status == "Active" || loan.Status == "Overdue")
+                {
+                    var comic = comics.FirstOrDefault(c => c.Id == loan.ComicId);
+                    if (comic != null)
+                    {
+                        comic.IsAvailable = false;
+                        comic.IsOnLoan = true;
+                        comic.CurrentLoanId = loan.Id;
+                        comic.LoanReturnDate = loan.LoanEndDate;
+                    }
+                }
+            }
+
+            var reviews = GetReviews();
+            var messages = GetSeedMessages();
+            var announcements = GetSeedAnnouncements();
+
+            // Insert in FK-safe order.
+            // Note: Seed data uses explicit integer Id values, so we must toggle IDENTITY_INSERT per table.
+            await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                await AddRangeWithIdentityInsertAsync(context, users, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, comics, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, pastLoans, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, futureLoans, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, reviews, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, messages, logger, cancellationToken);
+                await AddRangeWithIdentityInsertAsync(context, announcements, logger, cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+                logger?.LogInformation("Database seeding completed.");
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Database seeding failed; rolling back.");
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        private static async Task AddRangeWithIdentityInsertAsync<TEntity>(
+            comicbooksloanDbContext context,
+            IReadOnlyCollection<TEntity> entities,
+            ILogger? logger,
+            CancellationToken cancellationToken) where TEntity : class
+        {
+            if (entities == null || entities.Count == 0)
+            {
+                return;
+            }
+
+            var entityType = context.Model.FindEntityType(typeof(TEntity));
+            if (entityType == null)
+            {
+                throw new InvalidOperationException($"Unable to resolve EF model metadata for entity type '{typeof(TEntity).Name}'.");
+            }
+
+            var tableName = entityType.GetTableName();
+            if (string.IsNullOrWhiteSpace(tableName))
+            {
+                throw new InvalidOperationException($"Unable to resolve table name for entity type '{typeof(TEntity).Name}'.");
+            }
+
+            var schema = entityType.GetSchema() ?? "dbo";
+            var fullTableName = $"[{schema}].[{tableName}]";
+
+            // SQL Server allows IDENTITY_INSERT ON for only one table at a time per session.
+            logger?.LogDebug("Seeding {Entity} into {Table} (count={Count})", typeof(TEntity).Name, fullTableName, entities.Count);
+
+            var identityInsertOnSql = "SET IDENTITY_INSERT " + fullTableName + " ON";
+            await context.Database.ExecuteSqlRawAsync(identityInsertOnSql, cancellationToken);
+            try
+            {
+                context.Set<TEntity>().AddRange(entities);
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            finally
+            {
+                var identityInsertOffSql = "SET IDENTITY_INSERT " + fullTableName + " OFF";
+                await context.Database.ExecuteSqlRawAsync(identityInsertOffSql, cancellationToken);
+                context.ChangeTracker.Clear();
+            }
+        }
+
         /// <summary>
         /// Seeds the database with initial data.
         /// </summary>
@@ -855,7 +967,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 22, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Incredibly rare. One of the most powerful anti-war manga ever created.",
-                    CoverImageUrl = "https://example.com/red-snow-cover.jpg"
+                    CoverImageUrl = "https://m.media-amazon.com/images/I/81+J4OudhlL._SY425_.jpg"
                 },
                 new Comic
                 {
@@ -874,7 +986,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 22, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "The manga that changed everything. Influenced generations of alt manga artists.",
-                    CoverImageUrl = "https://example.com/nejishiki-cover.jpg"
+                    CoverImageUrl = "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1454244443i/28812471.jpg"
                 },
 
                 new Comic
@@ -894,7 +1006,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 23, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Hino at his most transgressive. Not for the squeamish.",
-                    CoverImageUrl = "https://example.com/hell-baby-cover.jpg"
+                    CoverImageUrl = "https://m.media-amazon.com/images/I/51Vt5VXNhxL._SY445_SX342_ControlCacheEqualizer_.jpg"
                 },
 
                 new Comic
@@ -914,7 +1026,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 23, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Criminally underrated. Best realistic martial arts manga nobody talks about.",
-                    CoverImageUrl = "https://example.com/kiichi-cover.jpg"
+                    CoverImageUrl = "https://i.ebayimg.com/images/g/d~YAAOSw--1lEWgc/s-l1600.webp"
                 },
                 new Comic
                 {
@@ -933,7 +1045,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 24, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Before the anime. Matsumoto's breakthrough work with incredible visual storytelling.",
-                    CoverImageUrl = "https://example.com/tekkonkinkreet-cover.jpg"
+                    CoverImageUrl = "https://m.media-amazon.com/images/I/91gIeOpX6dL._SY425_.jpg"
                 },
                 new Comic
                 {
@@ -952,7 +1064,7 @@ namespace ComicBooksLoanAppAPI.Data
                     IsAvailable = true,
                     DateListed = new DateTime(2025, 1, 24, 0, 0, 0, DateTimeKind.Utc),
                     OwnerNotes = "Otomo's best work besides Akira. Tense psychological horror.",
-                    CoverImageUrl = "https://example.com/domu-cover.jpg"
+                    CoverImageUrl = "https://pictures.abebooks.com/inventory/md/md30984084210.jpg"
                 }
 
             };

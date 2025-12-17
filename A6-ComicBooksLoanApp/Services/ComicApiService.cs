@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json.Nodes;
 
 namespace A6_ComicBooksLoanApp.Services
 {
@@ -190,68 +191,93 @@ namespace A6_ComicBooksLoanApp.Services
         /// <summary>
         /// Adds a new comic to the collection.
         /// </summary>
-        public async Task<bool> AddComicAsync(CreateComicDto newComic)
+        public async Task<(bool Success, string? ErrorMessage)> AddComicAsync(CreateComicDto newComic)
         {
             try
             {
                 var response = await _httpClient.PostAsJsonAsync("api/comics", newComic);
 
-                // Handle validation errors (400 Bad Request) by extracting details
-                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                if (response.IsSuccessStatusCode)
                 {
-                    // Try to read standard ProblemDetails or ValidationProblemDetails
-                    string? detailedMessage = null;
-
-                    // Attempt to parse as ValidationProblemDetails
-                    try
-                    {
-                        var validation = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ValidationProblemDetails>();
-                        if (validation?.Errors?.Count > 0)
-                        {
-                            // Flatten validation errors into a single message
-                            var parts = validation.Errors.SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
-                            detailedMessage = string.Join("; ", parts);
-                        }
-                        else if (!string.IsNullOrWhiteSpace(validation?.Detail))
-                        {
-                            detailedMessage = validation.Detail;
-                        }
-                    }
-                    catch
-                    {
-                        // Fallback to ProblemDetails or raw text
-                        try
-                        {
-                            var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
-                            detailedMessage = !string.IsNullOrWhiteSpace(problem?.Detail)
-                                ? problem.Detail
-                                : problem?.Title;
-                        }
-                        catch
-                        {
-                            detailedMessage = await response.Content.ReadAsStringAsync();
-                        }
-                    }
-
-                    var message = string.IsNullOrWhiteSpace(detailedMessage)
-                        ? "Bad Request: One or more required fields are missing or invalid."
-                        : $"Bad Request: {detailedMessage}";
-
-                    // Log with details and return false so the UI can display it
-                    _logger.LogWarning("Error adding new comic to the collection: {Message}", message);
-
-                    // Optionally, throw with detailed message if the caller expects exceptions
-                    throw new HttpRequestException(message);
+                    return (true, null);
                 }
 
-                // For other non-success codes, keep default behavior
-                response.EnsureSuccessStatusCode();
-                return true;
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var message = ExtractErrorMessage(responseBody);
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    message = $"Request failed ({(int)response.StatusCode} {response.ReasonPhrase}).";
+                }
+
+                _logger.LogWarning("Error adding new comic to the collection: {StatusCode} {Message}", (int)response.StatusCode, message);
+                return (false, message);
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Error adding new comic to the collection");
-                return false;
+                return (false, "Network error while calling the API.");
+            }
+        }
+
+        private static string? ExtractErrorMessage(string? responseBody)
+        {
+            if (string.IsNullOrWhiteSpace(responseBody))
+            {
+                return null;
+            }
+
+            // Many endpoints return a plain text error (e.g., "Comic title is required.")
+            if (!responseBody.TrimStart().StartsWith("{", StringComparison.Ordinal))
+            {
+                return responseBody.Trim();
+            }
+
+            // Or a ProblemDetails-like JSON payload
+            try
+            {
+                var node = JsonNode.Parse(responseBody);
+                if (node == null)
+                {
+                    return null;
+                }
+
+                var errors = node["errors"] as JsonObject;
+                if (errors != null && errors.Count > 0)
+                {
+                    var parts = new List<string>();
+                    foreach (var kvp in errors)
+                    {
+                        if (kvp.Value is JsonArray arr)
+                        {
+                            foreach (var item in arr)
+                            {
+                                var msg = item?.GetValue<string>();
+                                if (!string.IsNullOrWhiteSpace(msg))
+                                {
+                                    parts.Add(msg);
+                                }
+                            }
+                        }
+                    }
+
+                    if (parts.Count > 0)
+                    {
+                        return string.Join(" ", parts.Distinct());
+                    }
+                }
+
+                var detail = node["detail"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(detail))
+                {
+                    return detail;
+                }
+
+                var title = node["title"]?.GetValue<string>();
+                return string.IsNullOrWhiteSpace(title) ? null : title;
+            }
+            catch
+            {
+                return responseBody.Trim();
             }
         }
 
