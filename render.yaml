@@ -5,6 +5,7 @@ services:
     plan: free
     dockerfilePath: ComicBooksLoanAppAPI/Dockerfile
     autoDeploy: true
+    healthCheckPath: /healthz
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -21,6 +22,7 @@ services:
     plan: free
     dockerfilePath: A6-ComicBooksLoanApp/Dockerfile
     autoDeploy: true
+    healthCheckPath: /healthz
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production

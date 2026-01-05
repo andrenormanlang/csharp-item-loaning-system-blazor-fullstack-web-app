@@ -15,8 +15,8 @@ RUN dotnet publish A6-ComicBooksLoanApp/A6-ComicBooksLoanApp.csproj -c Release -
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# Render expects the service to listen on $PORT.
-ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+# Default container bind; platform port binding is also handled in Program.cs.
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 
 COPY --from=build /app/publish .
 

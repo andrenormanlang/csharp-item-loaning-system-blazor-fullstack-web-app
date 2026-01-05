@@ -7,6 +7,14 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render (and similar platforms) inject a dynamic port via PORT.
+// Binding explicitly avoids IPv6-only binds that can break platform health checks.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 // Database provider + connection string
 // - For production-faithful deployments (Render): MySQL
 // - You can still override via Database__Provider if needed.
@@ -98,6 +106,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Lightweight endpoint for platform health checks.
+app.MapGet("/healthz", () => Results.Ok("ok"));
+
 // Render (and most container platforms) run behind a reverse proxy that terminates TLS.
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
@@ -142,7 +153,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// In container platforms, TLS is typically terminated at a reverse proxy.
+// Avoid HTTPS redirection when PORT is provided (proxy handles external HTTPS).
+if (string.IsNullOrWhiteSpace(port))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AllowClient");
 
