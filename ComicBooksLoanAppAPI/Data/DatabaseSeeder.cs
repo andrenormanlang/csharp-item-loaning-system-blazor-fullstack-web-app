@@ -93,6 +93,17 @@ namespace ComicBooksLoanAppAPI.Data
                 return;
             }
 
+            // MySQL does not support SQL Server's IDENTITY_INSERT or [dbo] schema syntax.
+            // For MySQL, inserting explicit values into AUTO_INCREMENT columns is allowed by default.
+            if (IsMySqlProvider(context))
+            {
+                logger?.LogDebug("Seeding {Entity} (count={Count}) using MySQL insert", typeof(TEntity).Name, entities.Count);
+                context.Set<TEntity>().AddRange(entities);
+                await context.SaveChangesAsync(cancellationToken);
+                context.ChangeTracker.Clear();
+                return;
+            }
+
             var entityType = context.Model.FindEntityType(typeof(TEntity));
             if (entityType == null)
             {
@@ -124,6 +135,12 @@ namespace ComicBooksLoanAppAPI.Data
                 await context.Database.ExecuteSqlRawAsync(identityInsertOffSql, cancellationToken);
                 context.ChangeTracker.Clear();
             }
+        }
+
+        private static bool IsMySqlProvider(DbContext context)
+        {
+            var providerName = context.Database.ProviderName;
+            return providerName != null && providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
