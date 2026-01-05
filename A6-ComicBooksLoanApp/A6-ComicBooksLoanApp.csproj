@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>A6_ComicBooksLoanApp</RootNamespace>
-    <AssemblyName>`$(AssemblyName.Replace(' ', '_'))</AssemblyName>
+    <AssemblyName>$(AssemblyName.Replace(' ', '_'))</AssemblyName>
     <NoWarn>$(NoWarn);MUD0002</NoWarn>
   </PropertyGroup>
 

@@ -8,16 +8,33 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Database provider + connection string
-// - Dev default: SQL Server LocalDB
-// - Prod (Render): set Database__Provider=MySql and ConnectionStrings__DefaultConnection
-var dbProvider = builder.Configuration["Database:Provider"]?.Trim() ?? "SqlServer";
+// - For production-faithful deployments (Render): MySQL
+// - You can still override via Database__Provider if needed.
+var configuredProvider = builder.Configuration["Database:Provider"]?.Trim();
+var dbProvider = builder.Environment.IsProduction()
+    ? (string.IsNullOrWhiteSpace(configuredProvider) ? "MySql" : configuredProvider)
+    : (string.IsNullOrWhiteSpace(configuredProvider) ? "SqlServer" : configuredProvider);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    connectionString = dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase)
-        ? "Server=localhost;Port=3306;Database=defaultdb;User=avnadmin;Password=CHANGEME;SslMode=Required;"
-        : "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
+    if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    {
+        // In production, require an explicit connection string.
+        if (builder.Environment.IsProduction())
+        {
+            throw new InvalidOperationException(
+                "Missing MySQL connection string. Set ConnectionStrings__DefaultConnection in the environment. " +
+                "Example: Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;");
+        }
+
+        connectionString = "Server=localhost;Port=3306;Database=defaultdb;User=avnadmin;Password=CHANGEME;SslMode=None;";
+    }
+    else
+    {
+        // Local dev fallback (Windows only). Do not use this in production containers.
+        connectionString = "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
+    }
 }
 
 builder.Services.AddDbContext<comicbooksloanDbContext>(options =>
