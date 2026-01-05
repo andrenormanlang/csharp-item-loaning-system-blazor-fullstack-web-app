@@ -1,6 +1,7 @@
 using A6_ComicBooksLoanApp.Components;
 using A6_ComicBooksLoanApp.Services;
 using Blazored.LocalStorage;
+using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +20,8 @@ builder.Services.AddRazorComponents()
 // Configure HttpClient for API communication
 builder.Services.AddScoped(sp =>
 {
-    var baseAddress = "http://localhost:5259"; // Changed from https to http for local dev
+    var baseAddress = builder.Configuration["ApiBaseUrl"]
+        ?? "http://localhost:5259";
     var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
     return client;
 });
@@ -35,6 +37,12 @@ builder.Services.AddScoped<AdminApiService>();
 builder.Services.AddSingleton<AuthStateProvider>();
 
 var app = builder.Build();
+
+// Render (and most container platforms) run behind a reverse proxy that terminates TLS.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

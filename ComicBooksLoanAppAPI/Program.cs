@@ -2,15 +2,35 @@ using ComicBooksLoanAppAPI.Data;
 using ComicBooksLoanAppAPI.Repositories;
 using ComicBooksLoanAppAPI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Entity Framework Core with SQL Server
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
+// Database provider + connection string
+// - Dev default: SQL Server LocalDB
+// - Prod (Render): set Database__Provider=MySql and ConnectionStrings__DefaultConnection
+var dbProvider = builder.Configuration["Database:Provider"]?.Trim() ?? "SqlServer";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase)
+        ? "Server=localhost;Port=3306;Database=defaultdb;User=avnadmin;Password=CHANGEME;SslMode=Required;"
+        : "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
+}
+
 builder.Services.AddDbContext<comicbooksloanDbContext>(options =>
-    options.UseSqlServer(connectionString));
+{
+    if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    }
+    else
+    {
+        options.UseSqlServer(connectionString);
+    }
+});
 
 // Register repositories
 builder.Services.AddScoped<IComicRepository, ComicRepository>();
@@ -41,13 +61,31 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
     {
-        policy.WithOrigins("https://localhost:7001", "http://localhost:5001", "http://localhost:5144")
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+        if (origins.Length > 0)
+        {
+            policy.WithOrigins(origins)
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }
+        else
+        {
+            // If not configured, allow all (helps first-time deployment).
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }
     });
 });
 
 var app = builder.Build();
+
+// Render (and most container platforms) run behind a reverse proxy that terminates TLS.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // Create database (if missing) and seed data (if empty) on startup
 using (var scope = app.Services.CreateScope())
@@ -59,9 +97,16 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<comicbooksloanDbContext>();
 
-        // Best practice: use EF Core migrations for schema creation/updates.
-        // This will create the database if missing and apply any pending migrations.
-        await context.Database.MigrateAsync();
+        // SQL Server: apply migrations (existing migrations were created for SQL Server)
+        // MySQL: ensure schema exists based on the current model
+        if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+        }
 
         // If the DB exists but has no data, populate it from the current DatabaseSeeder.
         await DatabaseSeeder.SeedDatabaseIfEmptyAsync(context, logger);

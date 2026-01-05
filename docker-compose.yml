@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: comicbooks-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: defaultdb
+      MYSQL_USER: avnadmin
+      MYSQL_PASSWORD: localdevpassword
+      MYSQL_ROOT_PASSWORD: localdevrootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_0900_ai_ci"
+    ]
+
+  api:
+    build:
+      context: .
+      dockerfile: ComicBooksLoanAppAPI/Dockerfile
+    container_name: comicbooks-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Database__Provider: MySql
+      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=defaultdb;User=avnadmin;Password=localdevpassword;SslMode=None;"
+      Cors__AllowedOrigins__0: "http://localhost:5144"
+    ports:
+      - "5259:8080"
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: .
+      dockerfile: A6-ComicBooksLoanApp/Dockerfile
+    container_name: comicbooks-web
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ApiBaseUrl: "http://localhost:5259"
+    ports:
+      - "5144:8080"
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:

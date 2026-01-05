@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: comics-loan-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ComicBooksLoanAppAPI/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__Provider
+        value: MySql
+      - key: Cors__AllowedOrigins__0
+        value: https://comics-loan-app.onrender.com
+      # Set this in the Render dashboard as a Secret (do not commit passwords):
+      # ConnectionStrings__DefaultConnection=Server=...;Port=...;Database=defaultdb;User=...;Password=...;SslMode=Required;
+
+  - type: web
+    name: comics-loan-app
+    runtime: docker
+    plan: free
+    dockerfilePath: A6-ComicBooksLoanApp/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ApiBaseUrl
+        value: https://comics-loan-api.onrender.com

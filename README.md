@@ -220,6 +220,70 @@ Comics now include:
    - Start both server and client projects
    - Navigate to `https://localhost:7001`
 
+## Docker (Production-faithful Local Dev)
+
+This repo includes Docker files for both the API and the Blazor Server app, plus a local MySQL container so your local environment matches production.
+
+- API Dockerfile: `ComicBooksLoanAppAPI/Dockerfile`
+- Web (Blazor Server) Dockerfile: `A6-ComicBooksLoanApp/Dockerfile`
+- Local stack (MySQL + API + Web): `docker-compose.yml`
+
+### Run locally with MySQL
+
+From the repo root:
+
+- Build + run: `docker compose up --build`
+- App: `http://localhost:5144`
+- API: `http://localhost:5259`
+
+Notes:
+
+- Local DB credentials in `docker-compose.yml` are for local-only.
+- The API is configured with `Database__Provider=MySql` and uses `EnsureCreated()` for MySQL startup.
+
+## Deploy to Render.com (Docker)
+
+You will typically deploy **two Render Web Services**:
+
+1) **API service** (Dockerfile: `ComicBooksLoanAppAPI/Dockerfile`)
+2) **Web service** (Dockerfile: `A6-ComicBooksLoanApp/Dockerfile`)
+
+### Render: API service environment variables
+
+Set these in the Render dashboard (do NOT commit secrets):
+
+- `ASPNETCORE_ENVIRONMENT` = `Production`
+- `Database__Provider` = `MySql`
+- `ConnectionStrings__DefaultConnection` = `Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;`
+- `Cors__AllowedOrigins__0` = `https://<your-web-service>.onrender.com`
+
+For your deployed services:
+
+- `Cors__AllowedOrigins__0` = `https://comics-loan-app.onrender.com`
+
+### Render: Web service environment variables
+
+- `ASPNETCORE_ENVIRONMENT` = `Production`
+- `ApiBaseUrl` = `https://<your-api-service>.onrender.com`
+
+For your deployed services:
+
+- `ApiBaseUrl` = `https://comics-loan-api.onrender.com`
+
+### Aiven MySQL connection string
+
+Render expects you to put this into `ConnectionStrings__DefaultConnection` (API service):
+
+- Host: `mysql-3ed4a6c-andrenormanlang-7af0.g.aivencloud.com`
+- Port: `28197`
+- Database: `defaultdb`
+- User: `avnadmin`
+- SSL: required (`SslMode=Required`)
+
+Security:
+
+- If you pasted your DB password into chat or any public place, rotate it in Aiven.
+
 ## Future Enhancements
 
 

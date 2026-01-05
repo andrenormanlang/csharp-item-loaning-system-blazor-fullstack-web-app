@@ -1,0 +1,24 @@
+# Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# copy csproj files and restore
+COPY A6-ComicBooksLoanApp/A6-ComicBooksLoanApp.csproj A6-ComicBooksLoanApp/
+COPY A6-ComicBooksLoanApp.Client/A6-ComicBooksLoanApp.Client.csproj A6-ComicBooksLoanApp.Client/
+RUN dotnet restore A6-ComicBooksLoanApp/A6-ComicBooksLoanApp.csproj
+
+# copy everything else and publish
+COPY . .
+RUN dotnet publish A6-ComicBooksLoanApp/A6-ComicBooksLoanApp.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+
+# Render expects the service to listen on $PORT.
+ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+
+COPY --from=build /app/publish .
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "A6-ComicBooksLoanApp.dll"]
