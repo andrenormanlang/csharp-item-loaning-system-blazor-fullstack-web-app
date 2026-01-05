@@ -1,23 +1,23 @@
-# Comic Books Lending Library
+# 📚 Comic Books Lending Library
 
 A comprehensive full-stack .NET 9 Blazor application for comic book readers, specializing in the 45+ demographic. Built with Entity Framework Core, SQL Server, and MudBlazor UI framework.
 
-## Project Overview
+## 🎯 Project Overview
 
 The Comic Books Lending Library is designed to connect mature comic book collectors, enabling free comic book loans between collectors. Users can borrow comics from each other for a specified period, with the requirement that they offer one of their own comics in return. This creates a mutual lending system where both parties benefit.
 
-### Key Concept: Mutual Lending
+### 🔄 Key Concept: Mutual Lending
 
-- **Borrow a comic, lend a comic**: To borrow someone's comic, you must offer one of yours in return
-- **Timed loans**: Comics are loaned for a specific period (7-90 days)
-- **Unavailable while on loan**: Comics that are currently loaned out cannot be borrowed by others
-- **Mutual responsibility**: Both parties are responsible for returning comics in the same condition
+- **🤝 Borrow a comic, lend a comic**: To borrow someone's comic, you must offer one of yours in return
+- **⏰ Timed loans**: Comics are loaned for a specific period (7-90 days)
+- **🔒 Unavailable while on loan**: Comics that are currently loaned out cannot be borrowed by others
+- **⚖️ Mutual responsibility**: Both parties are responsible for returning comics in the same condition
 
-## Architecture
+## 🏗️ Architecture
 
-### Projects
+### 📦 Projects
 
-#### 1. ComicBooksExchangeAppAPI (ASP.NET Core Web API)
+#### 1. 🔌 ComicBooksExchangeAppAPI (ASP.NET Core Web API)
 
 REST API backend managing all business logic, data persistence, and service layer.
 
@@ -31,7 +31,7 @@ REST API backend managing all business logic, data persistence, and service laye
 - **Validators**: Data validation and business rule enforcement
 - **DTOs**: Data transfer objects for API communication
 
-#### 2. A6-ComicBooksExchangeApp (Blazor Server Application)
+#### 2. 🖥️ A6-ComicBooksExchangeApp (Blazor Server Application)
 
 Server-side rendering Blazor application providing the primary UI.
 
@@ -41,7 +41,7 @@ Server-side rendering Blazor application providing the primary UI.
 - **Layout**: Navigation and layout components
 - **Services**: Integration with API backend
 
-#### 3. A6-ComicBooksExchangeApp.Client (Blazor WebAssembly)
+#### 3. 🌐 A6-ComicBooksExchangeApp.Client (Blazor WebAssembly)
 
 Client-side interactive components for enhanced UX.
 
@@ -51,9 +51,9 @@ Client-side interactive components for enhanced UX.
 - **ComicCard**: Interactive comic display component
 - **LoanRequestDialog**: Form for requesting comic loans
 
-## Database Schema
+## 🗄️ Database Schema
 
-### Tables
+### 📊 Tables
 
 - **Users**: Collector profiles with ratings and verification status
 - **Comics**: Comic book listings with condition grades, valuations, and loan status
@@ -61,7 +61,7 @@ Client-side interactive components for enhanced UX.
 - **Loans**: Active and completed loan records
 - **Reviews**: Ratings and feedback after loans/exchanges
 
-### Loan System Fields
+### 📝 Loan System Fields
 
 Comics now include:
 
@@ -69,15 +69,15 @@ Comics now include:
 - `CurrentLoanId`: Reference to the active loan
 - `LoanReturnDate`: Expected return date when on loan
 
-### Key Features
+### ✨ Key Features
 
-- **Composite Foreign Keys**: Relationships between all entities
-- **Indexes**: Optimized queries on frequently searched fields (Username, Email)
-- **Data Integrity**: Cascading deletes and referential constraints
+- **🔗 Composite Foreign Keys**: Relationships between all entities
+- **🚀 Indexes**: Optimized queries on frequently searched fields (Username, Email)
+- **✅ Data Integrity**: Cascading deletes and referential constraints
 
-## API Endpoints
+## 🔌 API Endpoints
 
-### Comics
+### 📖 Comics
 
 - `GET /api/comics/available` - Get available comics (not on loan)
 - `GET /api/comics/{id}` - Get comic details
@@ -93,7 +93,7 @@ Comics now include:
 - `GET /api/comics/search/character?character=...` - Search by character
 - `GET /api/comics/filter/publisher?publisher=...` - Filter by publisher
 
-### Users
+### 👥 Users
 
 - `GET /api/users` - Get all users
 - `GET /api/users/{id}` - Get user profile
@@ -108,62 +108,62 @@ Comics now include:
 - `POST /api/users/{id}/exchanges/increment` - Update exchange count
 - `POST /api/users/{id}/rating/update` - Update rating
 
-## Key Technologies
+## 🛠️ Key Technologies
 
-- **.NET 9** - Latest .NET framework
-- **Blazor** - Full-stack C# for UI
-- **Entity Framework Core 9** - ORM for data access
-- **SQL Server** - Relational database
-- **MudBlazor** - Material Design component library
-- **Repository Pattern** - Data access abstraction
-- **Async/Await** - Asynchronous programming
-- **LINQ** - Language-integrated queries
+- **⚡ .NET 9** - Latest .NET framework
+- **🔥 Blazor** - Full-stack C# for UI
+- **🔧 Entity Framework Core 9** - ORM for data access
+- **💾 SQL Server** - Relational database
+- **🎨 MudBlazor** - Material Design component library
+- **📐 Repository Pattern** - Data access abstraction
+- **⚙️ Async/Await** - Asynchronous programming
+- **🔎 LINQ** - Language-integrated queries
 
-## Validation and Business Rules
+## ✅ Validation and Business Rules
 
-### Comic Validation
+### 📖 Comic Validation
 
 - Condition grades: Mint, Near Mint, Very Fine, Fine, Very Good, Good, Fair, Poor
 - Eras: Golden Age, Silver Age, Bronze Age, Modern Age, Contemporary
 - Estimated value must be non-negative
 - Title and publisher are required
 
-### User Validation
+### 👤 User Validation
 
 - Username: 3-50 characters, alphanumeric with hyphens/underscores
 - Email: Standard email validation
 - Collecting focus required
 - Phone number optional but validates if provided
 
-### Exchange Validation
+### 🔄 Exchange Validation
 
 - Statuses: Pending, Accepted, Shipped, Completed, Cancelled, Disputed
 - Transaction tracking with reference numbers
 - Condition verification on receipt
 
-### Loan Request Validation
+### 📋 Loan Request Validation
 
 - Statuses: Pending, Accepted, Declined, Cancelled, Expired
 - Loan duration: 7-90 days
 - Must offer a comic in return
 
-### Loan Validation
+### 📅 Loan Validation
 
 - Statuses: Active, Returned, Overdue, Cancelled
 - Both comics tracked during loan period
 - Return tracking with confirmation
 
-## Security Considerations
+## 🔐 Security Considerations
 
-- API communication via HTTPS
-- Input validation on all endpoints
-- CORS configured for WebAssembly client
-- Database migrations managed through EF Core
-- Null-safe programming with nullable annotations
+- 🔒 API communication via HTTPS
+- ✔️ Input validation on all endpoints
+- 🌐 CORS configured for WebAssembly client
+- 🗃️ Database migrations managed through EF Core
+- 🛡️ Null-safe programming with nullable annotations
 
-## Target Demographics
+## 🎯 Target Demographics
 
-### 45+ Comic Book Readers
+### 👴 45+ Comic Book Readers
 
 - **Nostalgia-Driven**: Bronze/Silver Age specialists
 - **Investment-Focused**: CGC/CBCS graded collections
@@ -172,9 +172,9 @@ Comics now include:
 - **Back-Issue Hunters**: Filling collection gaps
 - **Lapsed Collectors**: Returning to the hobby
 
-## Development Guidelines
+## 💻 Development Guidelines
 
-### Code Organization
+### 📁 Code Organization
 
 - Namespace hierarchy follows project structure
 - Models in `/Models`
@@ -185,42 +185,42 @@ Comics now include:
 - Validators in `/Validators`
 - DTOs in `/Models/DTOs`
 
-### XML Documentation
+### 📄 XML Documentation
 
 - All public classes and methods documented with `///` comments
 - Include parameter descriptions
 - Provide return value documentation
 - Note exceptions where applicable
 
-### Async Operations
+### ⚙️ Async Operations
 
 - All I/O operations use async/await
 - Service methods return `Task` or `Task<T>`
 - Repository methods support async queries
 
-### Error Handling
+### ⚠️ Error Handling
 
 - Try-catch blocks in service layer
 - Meaningful validation messages
 - HTTP status codes align with REST conventions
 - Logging available for debugging
 
-## Getting Started
+## 🚀 Getting Started
 
-1. **Setup Database**
+1. **🗄️ Setup Database**
    - Update connection string in `appsettings.json` or `Program.cs`
    - Run migrations: `dotnet ef database update`
 
-2. **Run API**
+2. **▶️ Run API**
    - Navigate to `ComicBooksExchangeAppAPI`
    - `dotnet run`
    - API available at `https://localhost:7291`
 
-3. **Run Blazor App**
+3. **🌟 Run Blazor App**
    - Start both server and client projects
    - Navigate to `https://localhost:7001`
 
-## Docker (Production-faithful Local Dev)
+## 🐳 Docker (Production-faithful Local Dev)
 
 This repo includes Docker files for both the API and the Blazor Server app, plus a local MySQL container so your local environment matches production.
 
@@ -228,27 +228,27 @@ This repo includes Docker files for both the API and the Blazor Server app, plus
 - Web (Blazor Server) Dockerfile: `A6-ComicBooksLoanApp/Dockerfile`
 - Local stack (MySQL + API + Web): `docker-compose.yml`
 
-### Run locally with MySQL
+### ▶️ Run locally with MySQL
 
 From the repo root:
 
-- Build + run: `docker compose up --build`
-- App: `http://localhost:5144`
-- API: `http://localhost:5259`
+- 🔨 Build + run: `docker compose up --build`
+- 🌐 App: `http://localhost:5144`
+- 🔌 API: `http://localhost:5259`
 
 Notes:
 
 - Local DB credentials in `docker-compose.yml` are for local-only.
 - The API is configured with `Database__Provider=MySql` and uses `EnsureCreated()` for MySQL startup.
 
-## Deploy to Render.com (Docker)
+## 🚢 Deploy to Render.com (Docker)
 
 You will typically deploy **two Render Web Services**:
 
 1) **API service** (Dockerfile: `ComicBooksLoanAppAPI/Dockerfile`)
 2) **Web service** (Dockerfile: `A6-ComicBooksLoanApp/Dockerfile`)
 
-### Render: API service environment variables
+### 🔧 Render: API service environment variables
 
 Set these in the Render dashboard (do NOT commit secrets):
 
@@ -261,7 +261,7 @@ For your deployed services:
 
 - `Cors__AllowedOrigins__0` = `https://comics-loan-app.onrender.com`
 
-### Render: Web service environment variables
+### 🌐 Render: Web service environment variables
 
 - `ASPNETCORE_ENVIRONMENT` = `Production`
 - `ApiBaseUrl` = `https://<your-api-service>.onrender.com`
@@ -270,7 +270,7 @@ For your deployed services:
 
 - `ApiBaseUrl` = `https://comics-loan-api.onrender.com`
 
-### Aiven MySQL connection string
+### 🔌 Aiven MySQL connection string
 
 Render expects you to put this into `ConnectionStrings__DefaultConnection` (API service):
 
@@ -284,14 +284,14 @@ Security:
 
 - If you pasted your DB password into chat or any public place, rotate it in Aiven.
 
-## Future Enhancements
+## 🔮 Future Enhancements
 
 
 
-## Contributing
+## 🤝 Contributing
 
 This is an educational project. Contributions following the code guidelines above are welcome.
 
-## License
+## 📜 License
 
 Educational use only.
