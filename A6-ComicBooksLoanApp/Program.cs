@@ -26,13 +26,23 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 // Configure HttpClient for API communication
-builder.Services.AddScoped(sp =>
+builder.Services.AddTransient<ApiWarmupRetryHandler>();
+
+builder.Services.AddHttpClient("Api", client =>
 {
     var baseAddress = builder.Configuration["ApiBaseUrl"]
         ?? "http://localhost:5259";
-    var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
-    return client;
-});
+
+    // Ensure relative requests like "api/users" resolve correctly.
+    if (!baseAddress.EndsWith("/", StringComparison.Ordinal))
+        baseAddress += "/";
+
+    client.BaseAddress = new Uri(baseAddress);
+})
+.AddHttpMessageHandler<ApiWarmupRetryHandler>();
+
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
 
 // Register API Bridge Services for WebAssembly client
 // These services handle all communication with the backend API
@@ -40,6 +50,7 @@ builder.Services.AddScoped<ComicApiService>();
 builder.Services.AddScoped<UserApiService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminApiService>();
+builder.Services.AddScoped<MessageApiService>();
 
 // Register AuthStateProvider as a singleton to share auth state across components
 builder.Services.AddSingleton<AuthStateProvider>();

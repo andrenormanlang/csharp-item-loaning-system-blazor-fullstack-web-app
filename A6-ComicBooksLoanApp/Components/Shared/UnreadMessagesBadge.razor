@@ -26,7 +26,7 @@
             var userId = await LocalStorage.GetItemAsync<int>("currentUserId");
             if (userId > 0)
             {
-                unreadCount = await Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{userId}");
+                unreadCount = await Http.GetFromJsonAsync<int>($"api/messages/unread-count/{userId}");
             }
         }
         catch

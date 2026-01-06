@@ -103,11 +103,10 @@ namespace A6_ComicBooksLoanApp.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/messages/unread/count/{userId}");
+                var response = await _httpClient.GetAsync($"api/messages/unread-count/{userId}");
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<UnreadCountResponse>();
-                    return result?.Count ?? 0;
+                    return await response.Content.ReadFromJsonAsync<int>();
                 }
                 return 0;
             }
@@ -169,9 +168,6 @@ namespace A6_ComicBooksLoanApp.Services
             public int UnreadCount { get; set; }
         }
 
-        private class UnreadCountResponse
-        {
-            public int Count { get; set; }
-        }
+
     }
 }

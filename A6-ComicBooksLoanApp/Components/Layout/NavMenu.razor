@@ -173,7 +173,7 @@
         try
         {
             unreadMessagesCount = await
-            Http.GetFromJsonAsync<int>($"http://localhost:5259/api/messages/unread-count/{currentUserId}");
+            Http.GetFromJsonAsync<int>($"api/messages/unread-count/{currentUserId}");
             await InvokeAsync(StateHasChanged);
         }
         catch
@@ -188,7 +188,7 @@
         try
         {
             pendingLoanRequestsCount = await
-            Http.GetFromJsonAsync<int>($"http://localhost:5259/api/loans/requests/pending-count/{currentUserId}");
+            Http.GetFromJsonAsync<int>($"api/loans/requests/pending-count/{currentUserId}");
             await InvokeAsync(StateHasChanged);
         }
         catch

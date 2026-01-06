@@ -238,6 +238,50 @@ From the repo root:
 
 Notes:
 
+## ☁️ Render Deployment (No-data / 502 troubleshooting)
+
+If the deployed UI renders but shows no data and the browser/network or server logs show `502 (Bad Gateway)` from API calls, it usually means the API service is unhealthy (crashing on startup or failing its health check).
+
+### ✅ What the UI is calling
+
+The Blazor app calls the API using `ApiBaseUrl` + relative paths like `api/admin/announcements`.
+
+- Base URL is configured in [A6-ComicBooksLoanApp/Program.cs](A6-ComicBooksLoanApp/Program.cs)
+- Render sets `ApiBaseUrl` in [render.yaml](render.yaml)
+
+So the failing request is typically:
+
+- `https://comics-loan-api.onrender.com/api/admin/announcements`
+
+### 🔧 Required Render environment variables
+
+In the Render dashboard:
+
+1. Service **comics-loan-api**
+2. **Environment** tab
+3. Add this as a **Secret**:
+
+- `ConnectionStrings__DefaultConnection=Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;`
+
+If you copied an Aiven “Service URI” like `mysql://user:pass@host:port/db?...`, convert it to the ADO.NET-style connection string above.
+
+### 🔍 Quick checks
+
+- Visit `https://comics-loan-api.onrender.com/healthz` (should return `ok`). If it returns `502`, check the **comics-loan-api** logs for DB connection errors.
+
+### 💤 Cold-start note ("I must hit /healthz first")
+
+On Render free tiers (or any platform that sleeps services), the API can be spun down when idle. The first request after a period of inactivity may return `502/503` briefly while the container is waking.
+
+- Symptom: the UI loads but data appears only after you manually visit `https://comics-loan-api.onrender.com/healthz`.
+- Mitigation: the web app uses an HTTP retry handler for idempotent API calls to tolerate cold-starts, but you may still see a short delay on the first load.
+
+### 🧭 Deployed UI calling `localhost`
+
+If **Messages** and **Community** work locally but not when deployed, check that UI components are not calling `http://localhost:5259/...`.
+
+- In production, the UI must call the API via `ApiBaseUrl` + relative paths like `api/users` and `api/messages/...`.
+
 - Local DB credentials in `docker-compose.yml` are for local-only.
 - The API is configured with `Database__Provider=MySql` and uses `EnsureCreated()` for MySQL startup.
 

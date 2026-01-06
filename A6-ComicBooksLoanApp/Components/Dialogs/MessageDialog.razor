@@ -71,7 +71,7 @@
                 Content = content
             };
 
-            var response = await Http.PostAsJsonAsync($"http://localhost:5259/api/messages/send/{SenderId}", messageDto);
+            var response = await Http.PostAsJsonAsync($"api/messages/send/{SenderId}", messageDto);
 
             if (response.IsSuccessStatusCode)
             {

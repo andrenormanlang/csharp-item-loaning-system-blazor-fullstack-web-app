@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject A6_ComicBooksLoanApp.Services.AuthStateProvider AuthState
 
 <PageTitle>Browse Members</PageTitle>
 
@@ -66,8 +67,10 @@
                             <MudCard>
                                 <MudCardHeader>
                                     <CardHeaderAvatar>
-                                        <MudAvatar Style="background-color: var(--mud-palette-primary); height: 64px; width: 64px;">
-                                            <MudText Typo="Typo.h6" Style="color: white;">@GetInitials(member.FullName)</MudText>
+                                        <MudAvatar
+                                            Style="background-color: var(--mud-palette-primary); height: 64px; width: 64px;">
+                                            <MudText Typo="Typo.h6" Style="color: white;">@GetInitials(member.FullName)
+                                            </MudText>
                                         </MudAvatar>
                                     </CardHeaderAvatar>
                                     <CardHeaderContent>
@@ -168,12 +171,12 @@
 
             if (verifiedOnly)
             {
-                var response = await Http.GetFromJsonAsync<List<MemberDto>>("http://localhost:5259/api/users/filter/verified");
+                var response = await Http.GetFromJsonAsync<List<MemberDto>>("api/users/filter/verified");
                 members = response ?? new List<MemberDto>();
             }
             else
             {
-                var response = await Http.GetFromJsonAsync<List<MemberDto>>("http://localhost:5259/api/users");
+                var response = await Http.GetFromJsonAsync<List<MemberDto>>("api/users");
                 members = response ?? new List<MemberDto>();
             }
 
@@ -216,9 +219,13 @@
 
     private async Task OpenMessageDialog(MemberDto member)
     {
-        // TODO: Get the current logged-in user's ID from authentication state
-        // For now, using a placeholder value of 1
-        var currentUserId = 1;
+        var currentUserId = AuthState.CurrentUserId;
+        if (currentUserId <= 0)
+        {
+            // Not logged in; navigate to login.
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
 
         var parameters = new DialogParameters
 {
@@ -246,10 +253,10 @@
         var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0)
             return "?";
-        
+
         if (parts.Length == 1)
             return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
-        
+
         return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
     }
 

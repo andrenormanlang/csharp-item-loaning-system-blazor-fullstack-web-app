@@ -19,35 +19,36 @@ if (!string.IsNullOrWhiteSpace(port))
 // - For production-faithful deployments (Render): MySQL
 // - You can still override via Database__Provider if needed.
 var configuredProvider = builder.Configuration["Database:Provider"]?.Trim();
-var dbProvider = builder.Environment.IsProduction()
-    ? (string.IsNullOrWhiteSpace(configuredProvider) ? "MySql" : configuredProvider)
-    : (string.IsNullOrWhiteSpace(configuredProvider) ? "SqlServer" : configuredProvider);
+var dbProvider = string.IsNullOrWhiteSpace(configuredProvider)
+    ? (builder.Environment.IsProduction() ? "MySql" : "SqlServer")
+    : configuredProvider;
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-if (string.IsNullOrWhiteSpace(connectionString))
+var isMySql = dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase);
+if (isMySql)
 {
-    if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    // Never silently fall back to placeholder credentials.
+    if (string.IsNullOrWhiteSpace(connectionString) ||
+        connectionString.Contains("CHANGEME", StringComparison.OrdinalIgnoreCase))
     {
-        // In production, require an explicit connection string.
-        if (builder.Environment.IsProduction())
-        {
-            throw new InvalidOperationException(
-                "Missing MySQL connection string. Set ConnectionStrings__DefaultConnection in the environment. " +
-                "Example: Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;");
-        }
-
-        connectionString = "Server=localhost;Port=3306;Database=defaultdb;User=avnadmin;Password=CHANGEME;SslMode=None;";
+        throw new InvalidOperationException(
+            "MySQL provider selected, but ConnectionStrings:DefaultConnection is missing or contains a placeholder password. " +
+            "Fix: set ConnectionStrings__DefaultConnection (recommended), or switch to SQL Server for local dev by setting Database__Provider=SqlServer. " +
+            "Example MySQL: Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;");
     }
-    else
+}
+else
+{
+    // Local dev fallback (Windows only). Do not use this in production containers.
+    if (string.IsNullOrWhiteSpace(connectionString))
     {
-        // Local dev fallback (Windows only). Do not use this in production containers.
         connectionString = "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
     }
 }
 
 builder.Services.AddDbContext<comicbooksloanDbContext>(options =>
 {
-    if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    if (isMySql)
     {
         options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
     }
