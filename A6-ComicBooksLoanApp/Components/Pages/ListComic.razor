@@ -1,9 +1,12 @@
 @page "/list-comic"
 @using MudBlazor
 @using A6_ComicBooksLoanApp.Services
+@using Blazored.LocalStorage
 @inject ComicApiService ComicService
 @inject NavigationManager Navigation
 @inject ILogger<ListComic> _logger
+@inject ILocalStorageService LocalStorage
+@inject AuthStateProvider AuthState
 
 <PageTitle>Add a Comic</PageTitle>
 
@@ -147,6 +150,7 @@
     private bool isLoading = false;
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
+    private int currentUserId = 0;
 
     private class ComicForm
     {
@@ -165,6 +169,24 @@
 
     private ComicForm comic = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUserId = await LocalStorage.GetItemAsync<int>("currentUserId");
+            if (currentUserId <= 0)
+            {
+                // Redirect to login if not authenticated
+                Navigation.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading user data");
+            Navigation.NavigateTo("/login");
+        }
+    }
+
     private async Task Submit()
     {
         await form.Validate();
@@ -176,6 +198,14 @@
 
             try
             {
+                // Verify user is still authenticated
+                if (currentUserId <= 0)
+                {
+                    errorMessage = "You must be logged in to add a comic.";
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+
                 // Create DTO for API submission
                 var createComicDto = new CreateComicDto
                 {
@@ -189,7 +219,7 @@
                     Era = comic.Era,
                     Genre = comic.Genre,
                     Description = comic.Description,
-                    OwnerId = 1, // TODO: Get from authenticated user
+                    OwnerId = currentUserId,
                     OwnerNotes = comic.Notes,
                     CoverImageUrl = string.IsNullOrWhiteSpace(comic.CoverImageUrl) ? "/images/comics/default-cover.svg" :
                 comic.CoverImageUrl
