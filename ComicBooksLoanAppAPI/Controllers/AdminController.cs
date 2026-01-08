@@ -289,7 +289,31 @@ namespace ComicBooksLoanAppAPI.Controllers
                 .Where(c => c.ApprovalStatus == Models.ApprovalStatus.Approved)
                 .Include(c => c.Owner)
                 .OrderByDescending(c => c.DateListed)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Title,
+                    c.IssueNumber,
+                    c.Publisher,
+                    c.Characters,
+                    c.Era,
+                    c.Genre,
+                    Description = c.Description,
+                    c.ConditionGrade,
+                    c.ConditionDescription,
+                    c.PublicationDate,
+                    c.OwnerId,
+                    OwnerUsername = c.Owner != null ? c.Owner.Username : "Unknown",
+                    OwnerNotes = c.OwnerNotes,
+                    CoverImageUrl = c.CoverImageUrl,
+                    c.IsAvailable,
+                    c.IsOnLoan,
+                    c.DateListed,
+                    c.CurrentLoanId,
+                    c.LoanReturnDate
+                })
                 .ToListAsync();
+
             return Ok(comics);
         }
 

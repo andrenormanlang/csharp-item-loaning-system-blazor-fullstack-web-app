@@ -165,7 +165,7 @@
                                         <MudText Typo="Typo.body2"><strong>@context.Title</strong></MudText>
                                     </MudTd>
                                     <MudTd DataLabel="Issue">#@context.IssueNumber</MudTd>
-                                    <MudTd DataLabel="Owner">@context.OwnerUsername</MudTd>
+                                    <MudTd DataLabel="Owner">@context.OwnerDisplayName</MudTd>
                                     <MudTd DataLabel="Publisher">@context.Publisher</MudTd>
                                     <MudTd DataLabel="Era">
                                         <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
@@ -327,7 +327,7 @@
                             <MudTd DataLabel="Title"><strong>@context.Title</strong></MudTd>
                             <MudTd DataLabel="Issue">#@context.IssueNumber</MudTd>
                             <MudTd DataLabel="Publisher">@context.Publisher</MudTd>
-                            <MudTd DataLabel="Owner">@context.OwnerUsername</MudTd>
+                            <MudTd DataLabel="Owner">@context.OwnerDisplayName</MudTd>
                             <MudTd DataLabel="Status">
                                 @if (context.IsOnLoan)
                                 {

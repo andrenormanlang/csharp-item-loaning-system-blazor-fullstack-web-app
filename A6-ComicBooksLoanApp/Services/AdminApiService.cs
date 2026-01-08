@@ -192,11 +192,15 @@ namespace A6_ComicBooksLoanApp.Services
             public string ConditionDescription { get; set; } = string.Empty;
             public DateTime PublicationDate { get; set; }
             public int OwnerId { get; set; }
-            public string OwnerUsername { get; set; } = string.Empty;
+            public string? OwnerUsername { get; set; }
             public string? OwnerNotes { get; set; }
             public string? CoverImageUrl { get; set; }
             public bool IsAvailable { get; set; }
             public bool IsOnLoan { get; set; }
+
+            public string OwnerDisplayName => string.IsNullOrWhiteSpace(OwnerUsername)
+                ? (OwnerId > 0 ? $"User #{OwnerId}" : "Unknown")
+                : OwnerUsername;
         }
 
         public class AdminUserDto
