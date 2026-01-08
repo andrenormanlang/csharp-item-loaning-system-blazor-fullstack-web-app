@@ -85,6 +85,12 @@
                         <MudText Typo="Typo.body2">@comic.OwnerNotes</MudText>
                     }
 
+                    @if (!string.IsNullOrEmpty(comic.Description))
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mt-4">Description</MudText>
+                        <MudText Typo="Typo.body2">@comic.Description</MudText>
+                    }
+
                     <MudDivider Class="my-4" />
 
                     <MudText Typo="Typo.subtitle2">Availability</MudText>
@@ -166,6 +172,7 @@
         public string ConditionGrade { get; set; } = string.Empty;
         public string? ConditionDescription { get; set; }
         public string Era { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public string? OwnerNotes { get; set; }
         public bool IsOnLoan { get; set; }
         public DateTime? LoanReturnDate { get; set; }
