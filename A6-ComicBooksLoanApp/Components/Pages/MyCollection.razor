@@ -89,21 +89,52 @@
                                     <MudText Typo="Typo.body2" Class="mt-3"><strong>Condition:</strong> @comic.ConditionGrade
                                     </MudText>
 
-                                    @if (comic.IsAvailable)
+                                    @if (comic.IsPending)
                                     {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
-                                            Class="mt-2">
-                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
-                                            Available for Loan
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                                                 Class="mt-2 w-100"
+                                                 Style="justify-content: flex-start; white-space: normal; height: auto; padding: 8px 12px;">
+                                            <div style="display: flex; align-items: flex-start; width: 100%;">
+                                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-2" Style="margin-top: 2px;" />
+                                                <div style="display: flex; flex-direction: column, gap: 2px;">
+                                                    <span style="font-weight: 500;">Pending admin review:</span>
+                                                    <span style="font-size: 0.85em; opacity: 0.9;">• Submitted @comic.DateListed.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                                </div>
+                                            </div>
+                                        </MudChip>
+                                    }
+                                    else if (comic.IsRejected)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
+                                                 Class="mt-2 w-100"
+                                                 Style="justify-content: flex-start; white-space: normal; height: auto; padding: 8px 12px;">
+                                            <div style="display: flex; align-items: flex-start; width: 100%;">
+                                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Class="mr-2" Style="margin-top: 2px;" />
+                                                <div style="display: flex; flex-direction: column, gap: 2px;">
+                                                    <span style="font-weight: 500;">Rejected by admin:</span>
+                                                    <span style="font-size: 0.85em; opacity: 0.9;">• Submitted @comic.DateListed.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                                </div>
+                                            </div>
                                         </MudChip>
                                     }
                                     else
                                     {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
-                                            Class="mt-2">
-                                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
-                                            On Loan
-                                        </MudChip>
+                                        @if (comic.IsAvailable)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                                                Class="mt-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
+                                                Available for Loan
+                                            </MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                                                Class="mt-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                                                On Loan
+                                            </MudChip>
+                                        }
                                     }
                                 </MudCardContent>
                                 <MudCardActions>
@@ -144,8 +175,13 @@
         public string ConditionGrade { get; set; } = string.Empty;
         public string Era { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public int ApprovalStatus { get; set; }
+        public DateTime DateListed { get; set; }
         public bool IsAvailable { get; set; }
         public string? CoverImageUrl { get; set; }
+
+        public bool IsPending => ApprovalStatus == 0;
+        public bool IsRejected => ApprovalStatus == 2;
     }
 
     private CollectionStats collectionStats = new();
@@ -185,8 +221,8 @@
 
         try
         {
-            // Call API to get user's comics
-            var response = await Http.GetAsync($"api/comics/user/{currentUserId}");
+            // Call API to get user's comics (including pending, for private owner view)
+            var response = await Http.GetAsync($"api/comics/user/{currentUserId}?includeUnapproved=true");
             if (response.IsSuccessStatusCode)
             {
                 comics = await response.Content.ReadFromJsonAsync<List<ComicDto>>() ?? new();
@@ -197,10 +233,10 @@
                 comics = new();
             }
 
-            // Calculate statistics
+            // Calculate statistics (only count approved comics as "in marketplace")
             collectionStats.TotalComics = comics.Count;
-            collectionStats.AvailableForLoan = comics.Count(c => c.IsAvailable);
-            collectionStats.OnLoan = comics.Count(c => !c.IsAvailable);
+            collectionStats.AvailableForLoan = comics.Count(c => c.IsAvailable && c.ApprovalStatus == 1);
+            collectionStats.OnLoan = comics.Count(c => !c.IsAvailable && c.ApprovalStatus == 1);
         }
         catch (Exception ex)
         {

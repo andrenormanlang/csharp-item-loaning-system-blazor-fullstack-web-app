@@ -59,6 +59,16 @@ namespace ComicBooksLoanAppAPI.Services
             return await _comicRepository.GetByOwnerIdAsync(userId);
         }
 
+        public async Task<IEnumerable<Comic>> GetUserCollectionIncludingUnapprovedAsync(int userId)
+        {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("User ID must be greater than 0.", nameof(userId));
+            }
+
+            return await _comicRepository.GetByOwnerIdIncludingUnapprovedAsync(userId);
+        }
+
         /// <summary>
         /// Adds a new comic to the marketplace asynchronously.
         /// </summary>

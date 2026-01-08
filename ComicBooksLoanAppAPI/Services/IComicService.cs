@@ -27,6 +27,7 @@ namespace ComicBooksLoanAppAPI.Services
         /// <param name="userId">The user ID.</param>
         /// <returns>A collection of comics owned by the user.</returns>
         Task<IEnumerable<Comic>> GetUserCollectionAsync(int userId);
+        Task<IEnumerable<Comic>> GetUserCollectionIncludingUnapprovedAsync(int userId);
 
         /// <summary>
         /// Adds a new comic to the marketplace asynchronously.

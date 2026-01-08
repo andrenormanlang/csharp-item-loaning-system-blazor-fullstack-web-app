@@ -51,6 +51,15 @@ namespace ComicBooksLoanAppAPI.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Comic>> GetByOwnerIdIncludingUnapprovedAsync(int ownerId)
+        {
+            return await _context.Comics
+                .Where(c => c.OwnerId == ownerId)
+                .Include(c => c.Owner)
+                .OrderByDescending(c => c.DateListed)
+                .ToListAsync();
+        }
+
         /// <summary>
         /// Gets comics by era asynchronously.
         /// </summary>

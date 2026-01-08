@@ -79,13 +79,17 @@ namespace ComicBooksLoanAppAPI.Controllers
         /// Gets a user's comic collection.
         /// </summary>
         /// <param name="userId">The user ID.</param>
+        /// <param name="includeUnapproved">If true, includes pending/rejected comics (intended for the owner’s private library view).</param>
         /// <returns>A collection of comics owned by the user.</returns>
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<Comic>>> GetUserCollection(int userId)
+        public async Task<ActionResult<IEnumerable<Comic>>> GetUserCollection(int userId, [FromQuery] bool includeUnapproved = false)
         {
             try
             {
-                var comics = await _comicService.GetUserCollectionAsync(userId);
+                var comics = includeUnapproved
+                    ? await _comicService.GetUserCollectionIncludingUnapprovedAsync(userId)
+                    : await _comicService.GetUserCollectionAsync(userId);
+
                 return Ok(comics);
             }
             catch (ArgumentException ex)

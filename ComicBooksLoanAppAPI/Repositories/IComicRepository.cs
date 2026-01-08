@@ -20,6 +20,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         /// <param name="ownerId">The owner's user ID.</param>
         /// <returns>A collection of comics owned by the specified user.</returns>
         Task<IEnumerable<Comic>> GetByOwnerIdAsync(int ownerId);
+        Task<IEnumerable<Comic>> GetByOwnerIdIncludingUnapprovedAsync(int ownerId);
 
         /// <summary>
         /// Gets comics by era asynchronously.
