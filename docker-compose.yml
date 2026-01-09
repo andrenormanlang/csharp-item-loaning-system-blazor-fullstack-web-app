@@ -1,22 +1,16 @@
 services:
   db:
-    image: mysql:8.4
-    container_name: comicbooks-mysql
+    image: postgres:16
+    container_name: comicbooks-postgres
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: defaultdb
-      MYSQL_USER: avnadmin
-      MYSQL_PASSWORD: localdevpassword
-      MYSQL_ROOT_PASSWORD: localdevrootpassword
+      POSTGRES_DB: comics_loan_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdevpassword
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: [
-      "--default-authentication-plugin=mysql_native_password",
-      "--character-set-server=utf8mb4",
-      "--collation-server=utf8mb4_0900_ai_ci"
-    ]
+      - postgres_data:/var/lib/postgresql/data
 
   api:
     build:
@@ -26,8 +20,7 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      Database__Provider: MySql
-      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=defaultdb;User=avnadmin;Password=localdevpassword;SslMode=None;"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=comics_loan_app;Username=postgres;Password=localdevpassword;Ssl Mode=Disable;"
       Cors__AllowedOrigins__0: "http://localhost:5144"
     ports:
       - "5259:8080"
@@ -49,4 +42,4 @@ services:
       - api
 
 volumes:
-  mysql_data:
+  postgres_data:

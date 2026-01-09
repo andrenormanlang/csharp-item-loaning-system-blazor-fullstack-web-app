@@ -3,6 +3,7 @@ using ComicBooksLoanAppAPI.Repositories;
 using ComicBooksLoanAppAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
+using Npgsql;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +38,21 @@ if (string.IsNullOrWhiteSpace(connectionString))
     }
 }
 
+// Some hosts (Render/Heroku/Neon examples) provide URL-style connection strings like:
+// postgresql://user:password@host:5432/dbname?sslmode=require
+// Npgsql expects a key/value connection string, so convert if needed.
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = builder.Configuration["DATABASE_URL"];
+}
+
+if (!string.IsNullOrWhiteSpace(connectionString) &&
+    (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+     connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
+{
+    connectionString = ConvertPostgresUrlToConnectionString(connectionString);
+}
+
 // For normal runs, require a valid connection string.
 // Design-time EF tooling uses `DesignTimeDbContextFactory` and shouldn't be blocked by this.
 var isEfTooling = args.Any(a => string.Equals(a, "migrations", StringComparison.OrdinalIgnoreCase))
@@ -63,6 +79,72 @@ builder.Services.AddDbContext<comicbooksloanDbContext>(options =>
             errorCodesToAdd: null);
     });
 });
+
+static string ConvertPostgresUrlToConnectionString(string databaseUrl)
+{
+    if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri) ||
+        (!string.Equals(uri.Scheme, "postgres", StringComparison.OrdinalIgnoreCase) &&
+         !string.Equals(uri.Scheme, "postgresql", StringComparison.OrdinalIgnoreCase)))
+    {
+        return databaseUrl;
+    }
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+
+    var builder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.IsDefaultPort ? 5432 : uri.Port,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = username,
+        Password = password,
+        // Most hosted Postgres providers require TLS.
+        SslMode = SslMode.Require
+    };
+
+    // Apply common query string options (e.g., sslmode=require)
+    var query = uri.Query;
+    if (!string.IsNullOrWhiteSpace(query))
+    {
+        foreach (var part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = part.Split('=', 2);
+            var key = Uri.UnescapeDataString(kv[0]);
+            var value = kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty;
+
+            if (key.Equals("sslmode", StringComparison.OrdinalIgnoreCase))
+            {
+                // Common values: disable, allow, prefer, require, verify-ca, verify-full
+                // Npgsql enum names: Disable, Prefer, Require, VerifyCA, VerifyFull
+                var normalized = value.Trim().ToLowerInvariant();
+                builder.SslMode = normalized switch
+                {
+                    "disable" => SslMode.Disable,
+                    "allow" => SslMode.Prefer,
+                    "prefer" => SslMode.Prefer,
+                    "require" => SslMode.Require,
+                    "verify-ca" => SslMode.VerifyCA,
+                    "verify-full" => SslMode.VerifyFull,
+                    _ => builder.SslMode
+                };
+
+                continue;
+            }
+
+            if (key.Equals("pooling", StringComparison.OrdinalIgnoreCase) && bool.TryParse(value, out var pooling))
+            {
+                builder.Pooling = pooling;
+                continue;
+            }
+
+            // Note: 'Trust Server Certificate' is obsolete in modern Npgsql; ignore if present.
+        }
+    }
+
+    return builder.ConnectionString;
+}
 
 // Register repositories
 builder.Services.AddScoped<IComicRepository, ComicRepository>();

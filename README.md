@@ -1,6 +1,6 @@
 # 📚 Comic Books Lending Library
 
-A comprehensive full-stack .NET 9 Blazor application for comic book readers, specializing in the 45+ demographic. Built with Entity Framework Core, SQL Server, and MudBlazor UI framework.
+A comprehensive full-stack .NET 9 Blazor application for comic book readers, specializing in the 45+ demographic. Built with Entity Framework Core, PostgreSQL (Npgsql), and MudBlazor UI framework.
 
 ## 🎯 Project Overview
 
@@ -113,7 +113,7 @@ Comics now include:
 - **⚡ .NET 9** - Latest .NET framework
 - **🔥 Blazor** - Full-stack C# for UI
 - **🔧 Entity Framework Core 9** - ORM for data access
-- **💾 SQL Server** - Relational database
+- **💾 PostgreSQL** - Relational database (via Npgsql)
 - **🎨 MudBlazor** - Material Design component library
 - **📐 Repository Pattern** - Data access abstraction
 - **⚙️ Async/Await** - Asynchronous programming
@@ -208,7 +208,7 @@ Comics now include:
 ## 🚀 Getting Started
 
 1. **🗄️ Setup Database**
-   - Update connection string in `appsettings.json` or `Program.cs`
+   - Update connection string in `appsettings.json` or via environment variables
    - Run migrations: `dotnet ef database update`
 
 2. **▶️ Run API**
@@ -222,13 +222,13 @@ Comics now include:
 
 ## 🐳 Docker (Production-faithful Local Dev)
 
-This repo includes Docker files for both the API and the Blazor Server app, plus a local MySQL container so your local environment matches production.
+This repo includes Docker files for both the API and the Blazor Server app, plus a local PostgreSQL container so your local environment matches production.
 
 - API Dockerfile: `ComicBooksLoanAppAPI/Dockerfile`
 - Web (Blazor Server) Dockerfile: `A6-ComicBooksLoanApp/Dockerfile`
-- Local stack (MySQL + API + Web): `docker-compose.yml`
+- Local stack (PostgreSQL + API + Web): `docker-compose.yml`
 
-### ▶️ Run locally with MySQL
+### ▶️ Run locally with PostgreSQL
 
 From the repo root:
 
@@ -237,6 +237,8 @@ From the repo root:
 - 🔌 API: `http://localhost:5259`
 
 Notes:
+
+- PostgreSQL uses `timestamp with time zone` for several fields; store UTC timestamps in the database.
 
 ## ☁️ Render Deployment (No-data / 502 troubleshooting)
 
@@ -255,15 +257,30 @@ So the failing request is typically:
 
 ### 🔧 Required Render environment variables
 
-In the Render dashboard:
+In the Render dashboard for the API service (**comics-loan-api**) add this as a **Secret**.
 
-1. Service **comics-loan-api**
-2. **Environment** tab
-3. Add this as a **Secret**:
+You can use either of these formats:
 
-- `ConnectionStrings__DefaultConnection=Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;`
+1) **URL format** (Neon-style):
 
-If you copied an Aiven “Service URI” like `mysql://user:pass@host:port/db?...`, convert it to the ADO.NET-style connection string above.
+`ConnectionStrings__DefaultConnection=postgresql://<user>:<password>@<host>/<db>?sslmode=require`
+
+2) **Npgsql key/value format**:
+
+`ConnectionStrings__DefaultConnection=Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;Ssl Mode=Require;`
+
+### 🧪 Example: Neon on Render (recommended env vars)
+
+Set these on the **API service** (example values shown):
+
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ConnectionStrings__DefaultConnection=postgresql://<user>:<password>@<host>/<db>?sslmode=require&channel_binding=require`
+- `Cors__AllowedOrigins__0=https://comics-loan-app.onrender.com`
+
+Set these on the **Web service**:
+
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ApiBaseUrl=https://comics-loan-api.onrender.com`
 
 ### 🔍 Quick checks
 
@@ -283,7 +300,7 @@ If **Messages** and **Community** work locally but not when deployed, check that
 - In production, the UI must call the API via `ApiBaseUrl` + relative paths like `api/users` and `api/messages/...`.
 
 - Local DB credentials in `docker-compose.yml` are for local-only.
-- The API is configured with `Database__Provider=MySql` and uses `EnsureCreated()` for MySQL startup.
+- The API runs EF Core migrations on startup.
 
 ## 🚢 Deploy to Render.com (Docker)
 
@@ -297,8 +314,7 @@ You will typically deploy **two Render Web Services**:
 Set these in the Render dashboard (do NOT commit secrets):
 
 - `ASPNETCORE_ENVIRONMENT` = `Production`
-- `Database__Provider` = `MySql`
-- `ConnectionStrings__DefaultConnection` = `Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;`
+- `ConnectionStrings__DefaultConnection` = `postgresql://<user>:<password>@<host>/<db>?sslmode=require`
 - `Cors__AllowedOrigins__0` = `https://<your-web-service>.onrender.com`
 
 For your deployed services:
@@ -314,19 +330,9 @@ For your deployed services:
 
 - `ApiBaseUrl` = `https://comics-loan-api.onrender.com`
 
-### 🔌 Aiven MySQL connection string
-
-Render expects you to put this into `ConnectionStrings__DefaultConnection` (API service):
-
-- Host: `mysql-3ed4a6c-andrenormanlang-7af0.g.aivencloud.com`
-- Port: `28197`
-- Database: `defaultdb`
-- User: `avnadmin`
-- SSL: required (`SslMode=Required`)
-
 Security:
 
-- If you pasted your DB password into chat or any public place, rotate it in Aiven.
+- If you pasted your DB password into chat or any public place, rotate it in Neon.
 
 ## 🔮 Future Enhancements
 
