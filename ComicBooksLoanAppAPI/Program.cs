@@ -15,47 +15,53 @@ if (!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
 
-// Database provider + connection string
-// - For production-faithful deployments (Render): MySQL
-// - You can still override via Database__Provider if needed.
-var configuredProvider = builder.Configuration["Database:Provider"]?.Trim();
-var dbProvider = string.IsNullOrWhiteSpace(configuredProvider)
-    ? (builder.Environment.IsProduction() ? "MySql" : "SqlServer")
-    : configuredProvider;
+// PostgreSQL connection configuration
+// Production: set ConnectionStrings__DefaultConnection to a full Neon connection string.
+// Local dev: can provide DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_DATABASE.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-var isMySql = dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase);
-if (isMySql)
+if (string.IsNullOrWhiteSpace(connectionString))
 {
-    // Never silently fall back to placeholder credentials.
+    var host = builder.Configuration["DB_HOST"];
+    var dbPort = builder.Configuration["DB_PORT"];
+    var username = builder.Configuration["DB_USERNAME"];
+    var password = builder.Configuration["DB_PASSWORD"];
+    var database = builder.Configuration["DB_DATABASE"];
+
+    if (!string.IsNullOrWhiteSpace(host) &&
+        !string.IsNullOrWhiteSpace(dbPort) &&
+        !string.IsNullOrWhiteSpace(username) &&
+        !string.IsNullOrWhiteSpace(password) &&
+        !string.IsNullOrWhiteSpace(database))
+    {
+        connectionString = $"Host={host};Port={dbPort};Database={database};Username={username};Password={password};";
+    }
+}
+
+// For normal runs, require a valid connection string.
+// Design-time EF tooling uses `DesignTimeDbContextFactory` and shouldn't be blocked by this.
+var isEfTooling = args.Any(a => string.Equals(a, "migrations", StringComparison.OrdinalIgnoreCase))
+    || args.Any(a => string.Equals(a, "database", StringComparison.OrdinalIgnoreCase));
+
+if (!isEfTooling)
+{
     if (string.IsNullOrWhiteSpace(connectionString) ||
         connectionString.Contains("CHANGEME", StringComparison.OrdinalIgnoreCase))
     {
         throw new InvalidOperationException(
-            "MySQL provider selected, but ConnectionStrings:DefaultConnection is missing or contains a placeholder password. " +
-            "Fix: set ConnectionStrings__DefaultConnection (recommended), or switch to SQL Server for local dev by setting Database__Provider=SqlServer. " +
-            "Example MySQL: Server=<host>;Port=<port>;Database=defaultdb;User=<user>;Password=<password>;SslMode=Required;");
-    }
-}
-else
-{
-    // Local dev fallback (Windows only). Do not use this in production containers.
-    if (string.IsNullOrWhiteSpace(connectionString))
-    {
-        connectionString = "Server=(localdb)\\mssqllocaldb;Database=ComicBooksLoanDb;Integrated Security=true;TrustServerCertificate=true;";
+            "PostgreSQL requires a valid connection string. " +
+            "Fix: set ConnectionStrings__DefaultConnection (recommended for production) or set DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_DATABASE for local dev.");
     }
 }
 
 builder.Services.AddDbContext<comicbooksloanDbContext>(options =>
 {
-    if (isMySql)
+    options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-    }
-    else
-    {
-        options.UseSqlServer(connectionString);
-    }
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    });
 });
 
 // Register repositories
@@ -122,28 +128,35 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
 
-    try
-    {
-        var context = services.GetRequiredService<comicbooksloanDbContext>();
+    // Deployment often has a small window where the DB is not reachable yet.
+    // Retry a few times so the service doesn’t crash on transient connect timeouts.
+    const int maxAttempts = 5;
+    var delay = TimeSpan.FromSeconds(2);
 
-        // SQL Server: apply migrations (existing migrations were created for SQL Server)
-        // MySQL: ensure schema exists based on the current model
-        if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
         {
-            await context.Database.EnsureCreatedAsync();
-        }
-        else
-        {
+            var context = services.GetRequiredService<comicbooksloanDbContext>();
+
+            // PostgreSQL: apply migrations
             await context.Database.MigrateAsync();
-        }
 
-        // If the DB exists but has no data, populate it from the current DatabaseSeeder.
-        await DatabaseSeeder.SeedDatabaseIfEmptyAsync(context, logger);
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Database initialization failed");
-        throw;
+            // If the DB exists but has no data, populate it from the current DatabaseSeeder.
+            await DatabaseSeeder.SeedDatabaseIfEmptyAsync(context, logger);
+            break;
+        }
+        catch (Exception ex) when (attempt < maxAttempts)
+        {
+            logger.LogWarning(ex, "Database initialization attempt {Attempt}/{MaxAttempts} failed; retrying in {Delay}...", attempt, maxAttempts, delay);
+            await Task.Delay(delay);
+            delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 15));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database initialization failed");
+            throw;
+        }
     }
 }
 
