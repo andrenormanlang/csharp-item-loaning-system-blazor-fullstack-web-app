@@ -30,6 +30,9 @@ namespace ComicBooksLoanAppAPI.Data
             // Treat "no users" as "empty database" for this app.
             if (await context.Users.AsNoTracking().AnyAsync(cancellationToken))
             {
+                // If the DB already has seed data inserted with explicit integer IDs,
+                // PostgreSQL identity sequences can lag behind and cause PK collisions on new inserts.
+                await AlignPostgresIdentitySequencesAsync(context, logger, cancellationToken);
                 return;
             }
 
@@ -88,6 +91,10 @@ namespace ComicBooksLoanAppAPI.Data
                     await AddRangeWithIdentityInsertAsync(context, messages, logger, cancellationToken);
                     await AddRangeWithIdentityInsertAsync(context, announcements, logger, cancellationToken);
 
+                    // After inserting explicit IDs, align PostgreSQL identity sequences
+                    // so subsequent inserts (e.g., user registration) don't reuse existing keys.
+                    await AlignPostgresIdentitySequencesAsync(context, logger, cancellationToken);
+
                     await transaction.CommitAsync(cancellationToken);
                     logger?.LogInformation("Database seeding completed.");
                 }
@@ -98,6 +105,70 @@ namespace ComicBooksLoanAppAPI.Data
                     throw;
                 }
             });
+        }
+
+        private static async Task AlignPostgresIdentitySequencesAsync(comicbooksloanDbContext context, ILogger? logger, CancellationToken cancellationToken)
+        {
+            var providerName = context.Database.ProviderName;
+            if (providerName == null || !providerName.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            // Align identity sequences for any entity with an int PK generated on add.
+            // This prevents "duplicate key value violates unique constraint PK_*" when seed data uses explicit IDs.
+            foreach (var entityType in context.Model.GetEntityTypes())
+            {
+                var primaryKey = entityType.FindPrimaryKey();
+                if (primaryKey == null || primaryKey.Properties.Count != 1)
+                {
+                    continue;
+                }
+
+                var keyProperty = primaryKey.Properties[0];
+                if (keyProperty.ClrType != typeof(int) || keyProperty.ValueGenerated != ValueGenerated.OnAdd)
+                {
+                    continue;
+                }
+
+                var tableName = entityType.GetTableName();
+                if (string.IsNullOrWhiteSpace(tableName))
+                {
+                    continue;
+                }
+
+                var schema = entityType.GetSchema() ?? "public";
+                var quotedTable = QuoteIdent(tableName);
+                var quotedSchema = QuoteIdent(schema);
+                var quotedColumn = QuoteIdent(keyProperty.GetColumnName(StoreObjectIdentifier.Table(tableName, schema)) ?? keyProperty.Name);
+
+                // pg_get_serial_sequence() expects a text table name. For case-sensitive identifiers, include quotes.
+                var tableForPgGet = $"{schema}.{quotedTable}";
+                var fullTableRef = $"{quotedSchema}.{quotedTable}";
+
+                var sql = $@"
+SELECT CASE
+  WHEN pg_get_serial_sequence('{tableForPgGet}', '{keyProperty.Name}') IS NOT NULL
+  THEN setval(
+    pg_get_serial_sequence('{tableForPgGet}', '{keyProperty.Name}'),
+    COALESCE((SELECT MAX({quotedColumn}) FROM {fullTableRef}), 0) + 1,
+    false
+  )
+END;";
+
+                try
+                {
+                    await context.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal: some tables/columns may not have sequences depending on provider behavior.
+                    logger?.LogDebug(ex, "Sequence alignment skipped for {Schema}.{Table}", schema, tableName);
+                }
+            }
+
+            static string QuoteIdent(string identifier)
+                => "\"" + identifier.Replace("\"", "\"\"") + "\"";
         }
 
         private static async Task AddRangeWithIdentityInsertAsync<TEntity>(
