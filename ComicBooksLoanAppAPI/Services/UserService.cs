@@ -31,7 +31,12 @@ namespace ComicBooksLoanAppAPI.Services
         /// <returns>A collection of all users.</returns>
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            return await _userRepository.GetAllAsync();
+            // Public user discovery should only return admin-approved members.
+            // Admin-only listings should use AdminController endpoints.
+            return await _context.Users
+                .Where(u => u.ApprovalStatus == ApprovalStatus.Approved && u.Role != "Admin")
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
         }
 
         /// <summary>

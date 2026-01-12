@@ -53,7 +53,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<User>> GetVerifiedUsersAsync()
         {
             return await _context.Users
-                .Where(u => u.IsVerified)
+                .Where(u => u.IsVerified && u.ApprovalStatus == ApprovalStatus.Approved && u.Role != "Admin")
                 .Include(u => u.Comics)
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
@@ -67,7 +67,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<User>> GetTopRatedAsync(int count = 10)
         {
             return await _context.Users
-                .Where(u => u.SuccessfulLoans > 0)
+                .Where(u => u.SuccessfulLoans > 0 && u.ApprovalStatus == ApprovalStatus.Approved && u.Role != "Admin")
                 .Include(u => u.Comics)
                 .OrderByDescending(u => u.AverageRating)
                 .Take(count)
@@ -81,7 +81,7 @@ namespace ComicBooksLoanAppAPI.Repositories
         public async Task<IEnumerable<User>> GetMostActiveAsync()
         {
             return await _context.Users
-                .Where(u => u.SuccessfulLoans > 0)
+                .Where(u => u.SuccessfulLoans > 0 && u.ApprovalStatus == ApprovalStatus.Approved && u.Role != "Admin")
                 .Include(u => u.Comics)
                 .OrderByDescending(u => u.SuccessfulLoans)
                 .ToListAsync();
