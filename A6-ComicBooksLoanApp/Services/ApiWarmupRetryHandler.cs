@@ -7,6 +7,8 @@ namespace A6_ComicBooksLoanApp.Services
     /// </summary>
     public sealed class ApiWarmupRetryHandler : DelegatingHandler
     {
+        private static readonly HttpRequestOptionsKey<bool> SkipWarmupOption = new("SkipApiWarmup");
+
         private static readonly TimeSpan[] RetryDelays =
         [
             TimeSpan.FromMilliseconds(200),
@@ -17,14 +19,23 @@ namespace A6_ComicBooksLoanApp.Services
         ];
 
         private readonly ILogger<ApiWarmupRetryHandler> _logger;
+        private readonly ApiWarmupState _warmupState;
 
-        public ApiWarmupRetryHandler(ILogger<ApiWarmupRetryHandler> logger)
+        public ApiWarmupRetryHandler(ILogger<ApiWarmupRetryHandler> logger, ApiWarmupState warmupState)
         {
             _logger = logger;
+            _warmupState = warmupState;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if (!request.Options.TryGetValue(SkipWarmupOption, out var skipWarmup) || !skipWarmup)
+            {
+                // Warm up the backend API once per app instance before any real request.
+                // This avoids the "blank page" effect when the API is cold (e.g., Render free tier).
+                await _warmupState.EnsureWarmedAsync(WarmupAsync, cancellationToken);
+            }
+
             // Only retry safe/idempotent methods.
             var canRetry = request.Method == HttpMethod.Get
                 || request.Method == HttpMethod.Head
@@ -41,16 +52,18 @@ namespace A6_ComicBooksLoanApp.Services
 
                     if (attempt < RetryDelays.Length && IsTransient(response.StatusCode))
                     {
+                        var delay = GetRetryDelay(response, attempt);
+
                         _logger.LogWarning("Transient API response {StatusCode} for {Method} {Uri}. Retrying in {Delay} (attempt {Attempt}/{MaxAttempts})",
                             (int)response.StatusCode,
                             request.Method.Method,
                             request.RequestUri,
-                            RetryDelays[attempt],
+                            delay,
                             attempt + 1,
                             RetryDelays.Length);
 
                         response.Dispose();
-                        await Task.Delay(RetryDelays[attempt], cancellationToken);
+                        await Task.Delay(delay, cancellationToken);
                         continue;
                     }
 
@@ -84,6 +97,59 @@ namespace A6_ComicBooksLoanApp.Services
         private static bool IsTransient(HttpStatusCode statusCode)
             => statusCode is HttpStatusCode.BadGateway
                 or HttpStatusCode.ServiceUnavailable
-                or HttpStatusCode.GatewayTimeout;
+                or HttpStatusCode.GatewayTimeout
+                or (HttpStatusCode)429;
+
+        private static TimeSpan GetRetryDelay(HttpResponseMessage response, int attempt)
+        {
+            if (response.StatusCode == (HttpStatusCode)429)
+            {
+                // Prefer server-provided Retry-After if present.
+                var retryAfter = response.Headers.RetryAfter;
+                if (retryAfter?.Delta is TimeSpan delta)
+                {
+                    // Clamp to something reasonable so we don't stall the UI forever.
+                    return delta < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1)
+                        : delta > TimeSpan.FromSeconds(10) ? TimeSpan.FromSeconds(10)
+                        : delta;
+                }
+            }
+
+            return RetryDelays[Math.Clamp(attempt, 0, RetryDelays.Length - 1)];
+        }
+
+        private async Task<bool> WarmupAsync(CancellationToken cancellationToken)
+        {
+            // If BaseAddress is missing for some reason, do not block all requests.
+            if (InnerHandler is null)
+                return true;
+
+            for (var attempt = 0; attempt <= RetryDelays.Length; attempt++)
+            {
+                try
+                {
+                    using var warmupRequest = new HttpRequestMessage(HttpMethod.Get, "healthz");
+                    warmupRequest.Options.Set(SkipWarmupOption, true);
+
+                    using var response = await base.SendAsync(warmupRequest, cancellationToken);
+                    if (response.IsSuccessStatusCode)
+                        return true;
+
+                    if (attempt < RetryDelays.Length)
+                        await Task.Delay(GetRetryDelay(response, attempt), cancellationToken);
+                }
+                catch (HttpRequestException) when (attempt < RetryDelays.Length)
+                {
+                    await Task.Delay(RetryDelays[attempt], cancellationToken);
+                }
+                catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested && attempt < RetryDelays.Length)
+                {
+                    await Task.Delay(RetryDelays[attempt], cancellationToken);
+                }
+            }
+
+            // If warmup never succeeded, still allow normal requests to proceed (they have their own retries).
+            return true;
+        }
     }
 }

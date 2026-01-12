@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net;
 
 namespace A6_ComicBooksLoanApp.Services
 {
@@ -9,6 +10,11 @@ namespace A6_ComicBooksLoanApp.Services
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<AdminApiService> _logger;
+
+        private readonly SemaphoreSlim _activeAnnouncementsGate = new(1, 1);
+        private List<AnnouncementDto>? _activeAnnouncementsCache;
+        private DateTimeOffset _activeAnnouncementsCacheExpiresAt;
+        private static readonly TimeSpan ActiveAnnouncementsCacheTtl = TimeSpan.FromSeconds(30);
 
         public AdminApiService(HttpClient httpClient, ILogger<AdminApiService> logger)
         {
@@ -116,8 +122,49 @@ namespace A6_ComicBooksLoanApp.Services
         // Announcements
         public async Task<List<AnnouncementDto>> GetActiveAnnouncementsAsync()
         {
-            try { return await _httpClient.GetFromJsonAsync<List<AnnouncementDto>>("api/admin/announcements") ?? new(); }
-            catch (HttpRequestException ex) { _logger.LogError(ex, "Error getting active announcements"); return new(); }
+            var now = DateTimeOffset.UtcNow;
+            if (_activeAnnouncementsCache is not null && now < _activeAnnouncementsCacheExpiresAt)
+                return _activeAnnouncementsCache;
+
+            await _activeAnnouncementsGate.WaitAsync();
+            try
+            {
+                now = DateTimeOffset.UtcNow;
+                if (_activeAnnouncementsCache is not null && now < _activeAnnouncementsCacheExpiresAt)
+                    return _activeAnnouncementsCache;
+
+                using var response = await _httpClient.GetAsync("api/admin/announcements", HttpCompletionOption.ResponseHeadersRead);
+                if (response.IsSuccessStatusCode)
+                {
+                    var items = await response.Content.ReadFromJsonAsync<List<AnnouncementDto>>() ?? new();
+                    _activeAnnouncementsCache = items;
+                    _activeAnnouncementsCacheExpiresAt = DateTimeOffset.UtcNow.Add(ActiveAnnouncementsCacheTtl);
+                    return items;
+                }
+
+                // Avoid throwing during initial render; log and return a safe default.
+                if (response.StatusCode == (HttpStatusCode)429)
+                {
+                    _logger.LogWarning("Active announcements request was rate limited (429). Returning empty list.");
+                }
+                else
+                {
+                    _logger.LogWarning("Active announcements request failed with status {StatusCode}. Returning empty list.", (int)response.StatusCode);
+                }
+
+                _activeAnnouncementsCache = new();
+                _activeAnnouncementsCacheExpiresAt = DateTimeOffset.UtcNow.Add(TimeSpan.FromSeconds(5));
+                return _activeAnnouncementsCache;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error getting active announcements");
+                return new();
+            }
+            finally
+            {
+                _activeAnnouncementsGate.Release();
+            }
         }
 
         public async Task<List<AnnouncementDto>> GetAllAnnouncementsAsync()

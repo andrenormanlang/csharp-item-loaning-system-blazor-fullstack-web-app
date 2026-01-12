@@ -27,6 +27,7 @@ builder.Services.AddRazorComponents()
 
 // Configure HttpClient for API communication
 builder.Services.AddTransient<ApiWarmupRetryHandler>();
+builder.Services.AddSingleton<ApiWarmupState>();
 
 builder.Services.AddHttpClient("Api", client =>
 {
