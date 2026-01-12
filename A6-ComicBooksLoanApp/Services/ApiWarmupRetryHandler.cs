@@ -33,7 +33,11 @@ namespace A6_ComicBooksLoanApp.Services
             {
                 // Warm up the backend API once per app instance before any real request.
                 // This avoids the "blank page" effect when the API is cold (e.g., Render free tier).
-                await _warmupState.EnsureWarmedAsync(WarmupAsync, cancellationToken);
+                var requestUri = request.RequestUri;
+                if (requestUri is not null && requestUri.IsAbsoluteUri)
+                {
+                    await _warmupState.EnsureWarmedAsync(ct => WarmupAsync(requestUri, ct), cancellationToken);
+                }
             }
 
             // Only retry safe/idempotent methods.
@@ -118,17 +122,19 @@ namespace A6_ComicBooksLoanApp.Services
             return RetryDelays[Math.Clamp(attempt, 0, RetryDelays.Length - 1)];
         }
 
-        private async Task<bool> WarmupAsync(CancellationToken cancellationToken)
+        private async Task<bool> WarmupAsync(Uri requestUri, CancellationToken cancellationToken)
         {
             // If BaseAddress is missing for some reason, do not block all requests.
             if (InnerHandler is null)
                 return true;
 
+            var healthzUri = new Uri(requestUri, "/healthz");
+
             for (var attempt = 0; attempt <= RetryDelays.Length; attempt++)
             {
                 try
                 {
-                    using var warmupRequest = new HttpRequestMessage(HttpMethod.Get, "healthz");
+                    using var warmupRequest = new HttpRequestMessage(HttpMethod.Get, healthzUri);
                     warmupRequest.Options.Set(SkipWarmupOption, true);
 
                     using var response = await base.SendAsync(warmupRequest, cancellationToken);
