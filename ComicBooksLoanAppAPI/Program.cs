@@ -175,24 +175,21 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
     {
-        var originsValue = builder.Configuration["FrontendOrigins"] ?? builder.Configuration["FRONTEND_ORIGINS"];
+        var originsValue = builder.Configuration["FrontendOrigins"]
+                           ?? builder.Configuration["FRONTEND_ORIGINS"]
+                           ?? string.Join(',', builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>());
+
         var origins = string.IsNullOrWhiteSpace(originsValue)
             ? Array.Empty<string>()
-            : originsValue.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                          .Select(s => s.Trim()).ToArray();
+            : originsValue.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
 
         if (origins.Length > 0)
         {
-            policy.WithOrigins(origins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.WithOrigins(origins).AllowAnyMethod().AllowAnyHeader();
         }
         else if (builder.Environment.IsDevelopment())
         {
-            // permissive only for local development
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
         }
         else
         {
