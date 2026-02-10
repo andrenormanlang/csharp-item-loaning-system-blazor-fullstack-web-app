@@ -194,6 +194,7 @@ PublishScripts/
 
 # Azure App Service publish profile exports (contain credentials)
 *.publishProfile.xml
+*.PublishSettings
 
 # NuGet Packages
 *.nupkg
