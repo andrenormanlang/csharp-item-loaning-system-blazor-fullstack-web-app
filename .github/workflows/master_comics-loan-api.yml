@@ -18,7 +18,7 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: "9.x"
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
@@ -35,18 +35,18 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'comics-loan-api'
-          slot-name: 'Production'
+          app-name: "comics-loan-api"
+          slot-name: "Production"
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_544E4152358B434A85E48EDA9DD534C6 }}
