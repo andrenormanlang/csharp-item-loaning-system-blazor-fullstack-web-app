@@ -192,6 +192,9 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 
+# Azure App Service publish profile exports (contain credentials)
+*.publishProfile.xml
+
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages
