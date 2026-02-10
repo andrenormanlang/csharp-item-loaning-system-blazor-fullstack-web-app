@@ -175,7 +175,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        var origins = builder.Configuration.GetSection("https://comics-loan-app.onrender.com/").Get<string[]>() ?? Array.Empty<string>();
 
         if (origins.Length > 0)
         {
