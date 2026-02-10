@@ -175,20 +175,28 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
     {
-        var origins = builder.Configuration.GetSection("https://comics-loan-app.onrender.com/").Get<string[]>() ?? Array.Empty<string>();
+        var originsValue = builder.Configuration["FrontendOrigins"] ?? builder.Configuration["FRONTEND_ORIGINS"];
+        var origins = string.IsNullOrWhiteSpace(originsValue)
+            ? Array.Empty<string>()
+            : originsValue.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                          .Select(s => s.Trim()).ToArray();
 
         if (origins.Length > 0)
         {
             policy.WithOrigins(origins)
-                .AllowAnyMethod()
-                .AllowAnyHeader();
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            // permissive only for local development
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
         }
         else
         {
-            // If not configured, allow all (helps first-time deployment).
-            policy.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
+            throw new InvalidOperationException("Frontend origins not configured. Set FrontendOrigins or FRONTEND_ORIGINS.");
         }
     });
 });

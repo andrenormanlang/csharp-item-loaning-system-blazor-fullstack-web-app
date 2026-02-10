@@ -1,4 +1,4 @@
-name: Build and deploy .NET Core application to Web App app-comicbooks-loan-api
+name: Build and deploy .NET Core application to Web App comics-loan-api
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ permissions:
   id-token: write
   contents: read
 env:
-  AZURE_WEBAPP_NAME: app-comicbooks-loan-api
+  AZURE_WEBAPP_NAME: comics-loan-api
   AZURE_WEBAPP_PACKAGE_PATH: ComicBooksLoanAppAPI\publish
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 9.0.x
@@ -46,9 +46,9 @@ jobs:
     - name: Azure Login
       uses: azure/login@v2
       with:
-        client-id: ${{ vars.app_comicbooks_loan_api_CLIENT_ID_4960 }}
-        tenant-id: ${{ vars.app_comicbooks_loan_api_TENANT_ID_1F7D }}
-        subscription-id: ${{ vars.app_comicbooks_loan_api_SUBSCRIPTION_ID_1F7D }}
+        client-id: ${{ vars.comics_loan_api_CLIENT_ID_A819 }}
+        tenant-id: ${{ vars.comics_loan_api_TENANT_ID_A819 }}
+        subscription-id: ${{ vars.comics_loan_api_SUBSCRIPTION_ID_A819 }}
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
